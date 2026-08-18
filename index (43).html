@@ -1,248 +1,2542 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="referrer" content="no-referrer" />
-  <title>Interstellar</title>
-  <style>
-    :root {
-      --bg: #0f0f12;
-      --card: #1a1a22;
-      --text: #f2f2f5;
-      --muted: #9a9aad;
-      --accent: #6c8cff;
-      --border: #2a2a36;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0; padding: 0; min-height: 100%;
-      background: var(--bg); color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    }
-    .wrap {
-      max-width: 640px; margin: 0 auto; padding: 48px 20px 80px;
-      display: flex; flex-direction: column; align-items: center; gap: 20px;
-    }
-    h1 {
-      font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em;
-      margin: 0; background: linear-gradient(135deg, #fff, #6c8cff);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    .sub { color: var(--muted); font-size: 0.95rem; margin: 0; text-align: center; }
-    form {
-      width: 100%; display: flex; gap: 8px;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 8px;
-    }
-    input[type="text"] {
-      flex: 1; border: 0; outline: 0; background: transparent;
-      color: var(--text); font-size: 1rem; padding: 12px 14px;
-    }
-    button, .btn {
-      border: 0; border-radius: 10px; padding: 12px 18px;
-      background: var(--accent); color: #fff; font-weight: 600;
-      cursor: pointer; font-size: 0.95rem;
-    }
-    button:hover, .btn:hover { filter: brightness(1.08); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .status {
-      font-size: 0.85rem; color: var(--muted); min-height: 1.2em;
-      text-align: center;
-    }
-    .status.ok { color: #5ddea6; }
-    .status.err { color: #ff6b7a; }
-    .card {
-      width: 100%; background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 16px 18px;
-    }
-    .card h2 { margin: 0 0 10px; font-size: 0.95rem; color: var(--muted); font-weight: 600; }
-    .card label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
-    .card input {
-      width: 100%; padding: 10px 12px; border-radius: 8px;
-      border: 1px solid var(--border); background: #121218; color: var(--text);
-      font-size: 0.9rem;
-    }
-    .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .hint { font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin: 8px 0 0; }
-    code { background: #121218; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
-    iframe#proxy-frame {
-      display: none; width: 100%; height: 70vh; border: 1px solid var(--border);
-      border-radius: 12px; background: #000;
-    }
-    iframe#proxy-frame.show { display: block; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interstellar</title>
+
+<style>
+*{box-sizing:border-box}
+
+:root{
+  --bg:#08090d;
+  --panel:#11131a;
+  --panel2:#181b23;
+  --border:#292d38;
+  --text:#fff;
+  --muted:#8d94a3;
+  --accent:#ffffff;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+button,input{
+  font:inherit;
+}
+
+button{
+  border:0;
+  color:var(--text);
+  background:var(--panel2);
+  cursor:pointer;
+}
+
+button:hover{
+  background:#252936;
+}
+
+#browser{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+/* =========================
+   TABS
+========================= */
+
+#tabs{
+  height:40px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 7px 0;
+  background:#0b0c10;
+  border-bottom:1px solid var(--border);
+  overflow-x:auto;
+}
+
+.tab{
+  height:35px;
+  min-width:130px;
+  max-width:220px;
+  padding:0 10px;
+  border-radius:8px 8px 0 0;
+  background:#11131a;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.tab.active{
+  background:#1a1d25;
+}
+
+.tab-title{
+  flex:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:13px;
+}
+
+.tab-close{
+  width:20px;
+  height:20px;
+  border-radius:5px;
+  background:transparent;
+}
+
+#newtab{
+  width:32px;
+  height:32px;
+  border-radius:7px;
+}
+
+/* =========================
+   NAVBAR
+========================= */
+
+#bar{
+  height:58px;
+  background:#11131a;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:8px;
+  z-index:1000;
+}
+
+.nav{
+  width:40px;
+  min-width:40px;
+  height:40px;
+  border-radius:8px;
+}
+
+#address{
+  flex:1;
+  min-width:0;
+  height:40px;
+  border:1px solid #333844;
+  border-radius:9px;
+  outline:none;
+  background:#191c24;
+  color:#fff;
+  padding:0 14px;
+}
+
+#address:focus{
+  border-color:#6c7280;
+}
+
+#go{
+  width:48px;
+  height:40px;
+  border-radius:8px;
+  background:#fff;
+  color:#000;
+  font-weight:bold;
+}
+
+/* =========================
+   CONTENT
+========================= */
+
+#content{
+  position:relative;
+  flex:1;
+  min-height:0;
+}
+
+.page{
+  position:absolute;
+  inset:0;
+  overflow:auto;
+  background:#fff;
+  color:#000;
+  display:none;
+}
+
+.page.active{
+  display:block;
+}
+
+/* =========================
+   HOME
+========================= */
+
+#home{
+  position:absolute;
+  inset:0;
+  overflow:auto;
+  background:
+    radial-gradient(circle at 50% 25%,#252a38 0,#10121a 38%,#08090d 72%);
+}
+
+.home-inner{
+  width:min(950px,92%);
+  margin:auto;
+  padding:8vh 0 60px;
+  text-align:center;
+}
+
+.logo{
+  font-size:64px;
+  font-weight:800;
+  letter-spacing:-4px;
+  margin-bottom:8px;
+}
+
+.subtitle{
+  color:var(--muted);
+  margin-bottom:30px;
+}
+
+#homeSearch{
+  width:100%;
+  max-width:720px;
+  height:56px;
+  padding:0 18px;
+  border:1px solid #343844;
+  border-radius:12px;
+  background:#151821;
+  color:white;
+  outline:none;
+  font-size:15px;
+}
+
+#homeSearch:focus{
+  border-color:#777e8c;
+}
+
+.section{
+  margin-top:40px;
+  text-align:left;
+}
+
+.section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.section-head h2{
+  margin:0;
+  font-size:20px;
+}
+
+.section-head span{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:12px;
+}
+
+.card{
+  min-height:105px;
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(22,25,33,.9);
+  cursor:pointer;
+  transition:.15s;
+}
+
+.card:hover{
+  transform:translateY(-2px);
+  background:#20242e;
+}
+
+.card-icon{
+  font-size:27px;
+  margin-bottom:12px;
+}
+
+.card-name{
+  font-weight:bold;
+}
+
+.card-desc{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:5px;
+}
+
+/* =========================
+   PANELS
+========================= */
+
+.panel-page{
+  position:absolute;
+  inset:0;
+  overflow:auto;
+  padding:35px;
+  background:var(--bg);
+}
+
+.panel-page h1{
+  margin-top:0;
+}
+
+.panel{
+  max-width:900px;
+  margin:15px auto;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+}
+
+.panel button{
+  padding:10px 14px;
+  border-radius:8px;
+  margin:4px;
+}
+
+.setting-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding:15px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.setting-row:last-child{
+  border-bottom:0;
+}
+
+.setting-label{
+  font-weight:bold;
+}
+
+.setting-desc{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+select{
+  background:#20242d;
+  color:white;
+  border:1px solid #343844;
+  padding:9px;
+  border-radius:7px;
+}
+
+/* =========================
+   LOADING
+========================= */
+
+#loading{
+  position:absolute;
+  inset:0;
+  background:rgba(5,6,9,.82);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:5000;
+}
+
+.spinner{
+  width:42px;
+  height:42px;
+  border:4px solid #454954;
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
+/* =========================
+   ERROR
+========================= */
+
+#error{
+  position:absolute;
+  inset:0;
+  background:#08090d;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:30px;
+  z-index:4000;
+}
+
+#errorbox{
+  max-width:650px;
+}
+
+#error h2{
+  font-size:28px;
+}
+
+#error p{
+  color:#9ba1ad;
+  line-height:1.6;
+}
+
+#error button{
+  padding:11px 18px;
+  border-radius:8px;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+#status{
+  position:fixed;
+  bottom:17px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#20242d;
+  border:1px solid #404551;
+  padding:9px 15px;
+  border-radius:20px;
+  display:none;
+  z-index:9999;
+  font-size:12px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:600px){
+
+  .logo{
+    font-size:48px;
+  }
+
+  #bar{
+    height:55px;
+  }
+
+  .nav{
+    width:36px;
+    min-width:36px;
+  }
+
+  #address{
+    font-size:13px;
+  }
+
+  .panel-page{
+    padding:20px;
+  }
+
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <h1>Interstellar</h1>
-    <p class="sub">Static Ultraviolet proxy · needs HTTPS host + a Bare server</p>
 
-    <form id="go" autocomplete="off">
-      <input id="url" type="text" placeholder="Search Google or enter a URL" autofocus />
-      <button type="submit" id="go-btn">Go</button>
-    </form>
-    <div class="status" id="status">Registering service worker…</div>
+<div id="browser">
 
-    <iframe id="proxy-frame" title="Proxied page"></iframe>
+  <!-- =========================
+       TABS
+  ========================== -->
 
-    <div class="card">
-      <h2>Bare server</h2>
-      <label for="bare">Bare URL (must support the Bare protocol)</label>
-      <input id="bare" type="text" placeholder="https://example.com/bare/" />
-      <div class="row">
-        <button type="button" class="btn" id="save-bare">Save &amp; reload SW</button>
-      </div>
-      <p class="hint">
-        Default is <code>https://incog.dev/bare/</code>. If proxying fails, set a working Bare endpoint
-        and click Save. This static build does <strong>not</strong> include a Bare server — only the UV client.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2>How to host (one public link)</h2>
-      <p class="hint">
-        Upload this whole folder to any static host (GitHub Pages, Netlify, Cloudflare Pages, nginx, etc.)
-        so these files are reachable on the same origin:
-      </p>
-      <p class="hint">
-        <code>index.html</code> · <code>sw.js</code> · <code>uv.bundle.js</code> ·
-        <code>uv.config.js</code> · <code>uv.handler.js</code> · <code>uv.sw.js</code>
-      </p>
-      <p class="hint">
-        Open the site over <strong>https://</strong> (or localhost). Service workers will not register from
-        <code>data:</code>, <code>blob:</code>, or <code>file://</code>.
-      </p>
-    </div>
+  <div id="tabs">
+    <button id="newtab" title="New tab">+</button>
   </div>
 
-  <script src="/uv.bundle.js"></script>
-  <script src="/uv.config.js"></script>
-  <script>
-(function () {
-  const statusEl = document.getElementById("status");
-  const frame = document.getElementById("proxy-frame");
-  const bareInput = document.getElementById("bare");
-  const form = document.getElementById("go");
-  const urlInput = document.getElementById("url");
+  <!-- =========================
+       NAVIGATION
+  ========================== -->
 
-  function setStatus(msg, kind) {
-    statusEl.textContent = msg;
-    statusEl.className = "status" + (kind ? " " + kind : "");
+  <div id="bar">
+
+    <button class="nav" id="back" title="Back">←</button>
+    <button class="nav" id="forward" title="Forward">→</button>
+    <button class="nav" id="reload" title="Reload">↻</button>
+
+    <input
+      id="address"
+      placeholder="Search or enter URL..."
+      autocomplete="off"
+      spellcheck="false"
+    >
+
+    <button id="go">Go</button>
+
+    <button class="nav" id="cloak" title="Cloak">◉</button>
+    <button class="nav" id="fullscreen" title="Fullscreen">⛶</button>
+
+  </div>
+
+  <!-- =========================
+       CONTENT
+  ========================== -->
+
+  <div id="content">
+
+    <!-- HOME -->
+
+    <div id="home">
+
+      <div class="home-inner">
+
+        <div class="logo">Interstellar</div>
+
+        <div class="subtitle">
+          Browse the web from one self-contained HTML file.
+        </div>
+
+        <input
+          id="homeSearch"
+          placeholder="Search or enter a URL..."
+          autocomplete="off"
+        >
+
+        <div class="section">
+
+          <div class="section-head">
+            <h2>Apps</h2>
+            <span>Quick launch</span>
+          </div>
+
+          <div class="cards" id="apps"></div>
+
+        </div>
+
+        <div class="section">
+
+          <div class="section-head">
+            <h2>Games</h2>
+            <span>Quick launch</span>
+          </div>
+
+          <div class="cards" id="games"></div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- WEB PAGE -->
+
+    <div id="webpage" class="page"></div>
+
+    <!-- FAVORITES -->
+
+    <div id="favoritesPage" class="panel-page" style="display:none">
+
+      <h1>Favorites</h1>
+
+      <div class="panel" id="favoritesList">
+        No favorites yet.
+      </div>
+
+    </div>
+
+    <!-- HISTORY -->
+
+    <div id="historyPage" class="panel-page" style="display:none">
+
+      <h1>History</h1>
+
+      <div class="panel" id="historyList">
+        No history yet.
+      </div>
+
+    </div>
+
+    <!-- SETTINGS -->
+
+    <div id="settingsPage" class="panel-page" style="display:none">
+
+      <h1>Settings</h1>
+
+      <div class="panel">
+
+        <div class="setting-row">
+
+          <div>
+            <div class="setting-label">Search engine</div>
+            <div class="setting-desc">
+              Used when you enter text instead of a URL.
+            </div>
+          </div>
+
+          <select id="searchEngine">
+            <option value="google">Google</option>
+            <option value="bing">Bing</option>
+            <option value="duck">DuckDuckGo</option>
+            <option value="brave">Brave</option>
+          </select>
+
+        </div>
+
+        <div class="setting-row">
+
+          <div>
+            <div class="setting-label">Cloak title</div>
+            <div class="setting-desc">
+              Change the browser title and favicon.
+            </div>
+          </div>
+
+          <button id="cloakSetting">
+            Cloak
+          </button>
+
+        </div>
+
+        <div class="setting-row">
+
+          <div>
+            <div class="setting-label">Clear history</div>
+            <div class="setting-desc">
+              Remove locally stored browsing history.
+            </div>
+          </div>
+
+          <button id="clearHistory">
+            Clear
+          </button>
+
+        </div>
+
+        <div class="setting-row">
+
+          <div>
+            <div class="setting-label">Reset settings</div>
+            <div class="setting-desc">
+              Restore default local settings.
+            </div>
+          </div>
+
+          <button id="resetSettings">
+            Reset
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="panel">
+
+        <div class="setting-label">
+          Proxy configuration
+        </div>
+
+        <div class="setting-desc" style="margin:8px 0 15px">
+          This HTML uses the proxy endpoint defined in
+          <code>PROXY_PREFIX</code> in the source.
+        </div>
+
+        <code id="proxyDisplay"></code>
+
+      </div>
+
+    </div>
+
+    <!-- LOADING -->
+
+    <div id="loading">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- ERROR -->
+
+    <div id="error">
+
+      <div id="errorbox">
+
+        <h2>Could not load this website</h2>
+
+        <p id="errortext"></p>
+
+        <button id="retry">
+          Retry
+        </button>
+
+        <button id="errorHome">
+          Home
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div id="status"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   PROXY CONFIGURATION
+========================================================= */
+
+/*
+   This is the endpoint used to fetch cross-origin pages.
+
+   A static HTML file cannot disable browser CORS itself.
+   The endpoint must be a CORS-enabled service that fetches
+   the destination and returns it to this page.
+
+   Replace this with your own endpoint if desired.
+*/
+
+const PROXY_PREFIX =
+  "https://corsproxy.io/?url=";
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const tabs =
+  document.getElementById("tabs");
+
+const content =
+  document.getElementById("content");
+
+const home =
+  document.getElementById("home");
+
+const webpage =
+  document.getElementById("webpage");
+
+const address =
+  document.getElementById("address");
+
+const homeSearch =
+  document.getElementById("homeSearch");
+
+const loading =
+  document.getElementById("loading");
+
+const error =
+  document.getElementById("error");
+
+const errortext =
+  document.getElementById("errortext");
+
+const status =
+  document.getElementById("status");
+
+const apps =
+  document.getElementById("apps");
+
+const games =
+  document.getElementById("games");
+
+const favoritesPage =
+  document.getElementById("favoritesPage");
+
+const historyPage =
+  document.getElementById("historyPage");
+
+const settingsPage =
+  document.getElementById("settingsPage");
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentURL = "";
+
+let historyList =
+  JSON.parse(
+    localStorage.getItem("interstellarHistory") ||
+    "[]"
+  );
+
+let favorites =
+  JSON.parse(
+    localStorage.getItem("interstellarFavorites") ||
+    "[]"
+  );
+
+let historyPosition =
+  -1;
+
+let tabsData = [];
+
+let activeTab = null;
+
+
+/* =========================================================
+   BUILT-IN APPS
+========================================================= */
+
+const APP_DATA = [
+
+  {
+    icon:"🔎",
+    name:"Google",
+    desc:"Search the web",
+    url:"https://www.google.com/"
+  },
+
+  {
+    icon:"▶️",
+    name:"YouTube",
+    desc:"Watch videos",
+    url:"https://www.youtube.com/"
+  },
+
+  {
+    icon:"💬",
+    name:"Reddit",
+    desc:"Communities",
+    url:"https://www.reddit.com/"
+  },
+
+  {
+    icon:"📚",
+    name:"Wikipedia",
+    desc:"Encyclopedia",
+    url:"https://www.wikipedia.org/"
+  },
+
+  {
+    icon:"🐙",
+    name:"GitHub",
+    desc:"Code hosting",
+    url:"https://github.com/"
+  },
+
+  {
+    icon:"🎵",
+    name:"SoundCloud",
+    desc:"Music",
+    url:"https://soundcloud.com/"
   }
 
-  // Restore custom bare from localStorage
-  try {
-    const saved = localStorage.getItem("uv-bare");
-    if (saved) {
-      bareInput.value = saved;
-      self.__uv$config.bare = saved;
-    } else {
-      bareInput.value = self.__uv$config.bare || "";
-    }
-  } catch (e) {
-    bareInput.value = self.__uv$config.bare || "";
+];
+
+
+/* =========================================================
+   BUILT-IN GAMES
+========================================================= */
+
+const GAME_DATA = [
+
+  {
+    icon:"🕹️",
+    name:"2048",
+    desc:"Play 2048",
+    url:"https://play2048.co/"
+  },
+
+  {
+    icon:"♟️",
+    name:"Chess",
+    desc:"Play chess",
+    url:"https://www.chess.com/play"
+  },
+
+  {
+    icon:"🧩",
+    name:"Puzzle",
+    desc:"Online puzzles",
+    url:"https://www.jigsawexplorer.com/"
+  },
+
+  {
+    icon:"🎮",
+    name:"Game Portal",
+    desc:"Browser games",
+    url:"https://poki.com/"
   }
 
-  function isUrl(str) {
-    return /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}([\/?#].*)?$/i.test(str.trim())
-      || str.trim().startsWith("http://")
-      || str.trim().startsWith("https://");
-  }
+];
 
-  function buildTarget(value) {
-    let url = value.trim();
-    if (!url) return null;
-    if (!isUrl(url)) {
-      url = "https://www.google.com/search?q=" + encodeURIComponent(url);
-    } else if (!/^https?:\/\//i.test(url)) {
-      url = "https://" + url;
-    }
-    return url;
-  }
 
-  function proxyPath(target) {
-    const encoded = self.__uv$config.encodeUrl(target);
-    return self.__uv$config.prefix + encoded;
-  }
+/* =========================================================
+   RENDER CARDS
+========================================================= */
 
-  // Register SW
-  async function registerSW() {
-    if (!("serviceWorker" in navigator)) {
-      setStatus("Service workers not supported in this browser.", "err");
-      return false;
-    }
-    const proto = location.protocol;
-    if (proto !== "https:" && proto !== "http:") {
-      setStatus("Must be served over http(s). data:/blob:/file: cannot register a SW.", "err");
-      return false;
-    }
-    try {
-      const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-      await navigator.serviceWorker.ready;
-      setStatus("Service worker ready. Enter a URL above.", "ok");
-      return true;
-    } catch (e) {
-      console.error(e);
-      setStatus("SW registration failed: " + (e && e.message ? e.message : e), "err");
-      return false;
-    }
-  }
+function renderCards(container,data){
 
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    const target = buildTarget(urlInput.value);
-    if (!target) return;
-    if (!navigator.serviceWorker || !navigator.serviceWorker.controller) {
-      setStatus("Waiting for service worker control… try again in a second.", "err");
-      // still attempt navigation; SW may take over on next load
-    }
-    const path = proxyPath(target);
-    setStatus("Loading " + target + " …", "ok");
-    frame.classList.add("show");
-    frame.src = path;
+  container.innerHTML = "";
+
+  data.forEach(item=>{
+
+    const card =
+      document.createElement("div");
+
+    card.className = "card";
+
+    card.innerHTML = `
+      <div class="card-icon">${item.icon}</div>
+      <div class="card-name">${item.name}</div>
+      <div class="card-desc">${item.desc}</div>
+    `;
+
+    card.onclick = ()=>{
+      loadURL(item.url);
+    };
+
+    container.appendChild(card);
+
   });
 
-  document.getElementById("save-bare").addEventListener("click", async function () {
-    const v = bareInput.value.trim();
-    if (!v) {
-      setStatus("Enter a Bare URL first.", "err");
-      return;
-    }
-    try {
-      localStorage.setItem("uv-bare", v);
-    } catch (e) {}
-    self.__uv$config.bare = v;
-    // Update config used by next SW fetch by rewriting is hard; unregister + re-register
-    // Best effort: store and reload so uv.config.js path still default — inject via query
-    setStatus("Saved Bare URL. Reloading to apply…", "ok");
-    // Persist into a small override the SW can read? Old UV reads config from importScripts only.
-    // Write a dynamic config blob is not possible for SW importScripts same-origin easily.
-    // Reload page; user must also edit uv.config.js on server for permanent SW-side bare,
-    // OR we use a custom config file approach.
-    // Practical approach: also patch via session and full reload + re-register after editing config in LS for client encode only.
-    // For SW-side bare, regenerate config from LS by hosting config as dynamic — static host can't.
-    // So: tell user to edit uv.config.js OR we write config via service worker message.
+}
 
-    // Message SW to update bare if it supports it — classic UV reads config once at import.
-    // Force update: unregister all, then reload with note to edit uv.config.js
-    try {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const r of regs) await r.unregister();
-    } catch (e) {}
-    // Client-side navigation still uses encodeUrl; SW uses baked config bare.
-    // Write a runtime override file isn't possible on static. Use location reload and document.
-    alert(
-      "Bare URL saved for this browser session UI.\n\n" +
-      "For the service worker to use it, edit uv.config.js on the server and set:\n" +
-      "  bare: \"" + v + "\"\n" +
-      "Then hard-refresh the page."
+renderCards(apps,APP_DATA);
+renderCards(games,GAME_DATA);
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function showStatus(text){
+
+  status.textContent = text;
+  status.style.display = "block";
+
+  clearTimeout(status.timer);
+
+  status.timer =
+    setTimeout(()=>{
+      status.style.display = "none";
+    },1800);
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function showLoading(){
+
+  loading.style.display = "flex";
+
+}
+
+function hideLoading(){
+
+  loading.style.display = "none";
+
+}
+
+
+/* =========================================================
+   NORMALIZE URL
+========================================================= */
+
+function normalizeURL(value){
+
+  value =
+    String(value || "").trim();
+
+  if(!value)
+    return null;
+
+  if(
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ){
+
+    return value;
+
+  }
+
+  if(
+    !value.includes(" ") &&
+    value.includes(".")
+  ){
+
+    return "https://" + value;
+
+  }
+
+  const engine =
+    localStorage.getItem(
+      "interstellarSearchEngine"
+    ) || "google";
+
+  let base;
+
+  if(engine === "bing"){
+    base =
+      "https://www.bing.com/search?q=";
+  }
+  else if(engine === "duck"){
+    base =
+      "https://duckduckgo.com/?q=";
+  }
+  else if(engine === "brave"){
+    base =
+      "https://search.brave.com/search?q=";
+  }
+  else{
+    base =
+      "https://www.google.com/search?q=";
+  }
+
+  return base +
+    encodeURIComponent(value);
+
+}
+
+
+/* =========================================================
+   PROXY URL
+========================================================= */
+
+function proxyURL(url){
+
+  return (
+    PROXY_PREFIX +
+    encodeURIComponent(url)
+  );
+
+}
+
+
+/* =========================================================
+   PROXY FETCH
+========================================================= */
+
+async function proxyFetch(url){
+
+  const response =
+    await fetch(
+      proxyURL(url),
+      {
+        method:"GET",
+        credentials:"omit",
+        redirect:"follow"
+      }
     );
-    location.reload();
+
+  if(!response.ok){
+
+    throw new Error(
+      "Proxy returned HTTP " +
+      response.status
+    );
+
+  }
+
+  return response;
+
+}
+
+
+/* =========================================================
+   ABSOLUTE URL
+========================================================= */
+
+function absoluteURL(value,base){
+
+  try{
+
+    return new URL(
+      value,
+      base
+    ).href;
+
+  }
+  catch{
+
+    return value;
+
+  }
+
+}
+
+
+/* =========================================================
+   REWRITE HTML
+========================================================= */
+
+function rewriteHTML(html,base){
+
+  const parser =
+    new DOMParser();
+
+  const doc =
+    parser.parseFromString(
+      html,
+      "text/html"
+    );
+
+  /*
+    Remove CSP and refresh redirects.
+  */
+
+  doc
+    .querySelectorAll(
+      "meta[http-equiv='Content-Security-Policy']," +
+      "meta[http-equiv='content-security-policy']," +
+      "meta[http-equiv='refresh']"
+    )
+    .forEach(el=>el.remove());
+
+
+  /*
+    Remove scripts.
+
+    Scripts from another origin cannot safely be allowed
+    to execute directly inside this document.
+  */
+
+  doc
+    .querySelectorAll("script")
+    .forEach(el=>el.remove());
+
+
+  /*
+    Rewrite links and resources through the proxy.
+  */
+
+  doc
+    .querySelectorAll(
+      "[href],[src],[action],[poster]"
+    )
+    .forEach(el=>{
+
+      ["href","src","action","poster"]
+        .forEach(attr=>{
+
+          if(!el.hasAttribute(attr))
+            return;
+
+          let value =
+            el.getAttribute(attr);
+
+          if(!value)
+            return;
+
+          if(
+            value.startsWith("#") ||
+            value.startsWith("data:") ||
+            value.startsWith("blob:") ||
+            value.startsWith("javascript:")
+          ){
+            return;
+          }
+
+          const absolute =
+            absoluteURL(
+              value,
+              base
+            );
+
+          el.setAttribute(
+            attr,
+            proxyURL(absolute)
+          );
+
+        });
+
+    });
+
+
+  /*
+    Rewrite images/srcsets.
+  */
+
+  doc
+    .querySelectorAll("[srcset]")
+    .forEach(el=>{
+
+      const source =
+        el.getAttribute("srcset");
+
+      const result =
+        source
+          .split(",")
+          .map(part=>{
+
+            const bits =
+              part.trim()
+                .split(/\s+/);
+
+            if(!bits[0])
+              return part;
+
+            const absolute =
+              absoluteURL(
+                bits[0],
+                base
+              );
+
+            bits[0] =
+              proxyURL(absolute);
+
+            return bits.join(" ");
+
+          })
+          .join(", ");
+
+      el.setAttribute(
+        "srcset",
+        result
+      );
+
+    });
+
+
+  /*
+    Add a base URL for things that remain relative.
+  */
+
+  let baseElement =
+    doc.querySelector("base");
+
+  if(!baseElement){
+
+    baseElement =
+      doc.createElement("base");
+
+    if(doc.head){
+
+      doc.head.prepend(
+        baseElement
+      );
+
+    }
+
+  }
+
+  if(baseElement){
+
+    baseElement.href =
+      proxyURL(base);
+
+  }
+
+
+  /*
+    Force links to remain inside the proxy page.
+  */
+
+  doc
+    .querySelectorAll("a")
+    .forEach(link=>{
+
+      link.setAttribute(
+        "target",
+        "_self"
+      );
+
+    });
+
+
+  return (
+    "<!DOCTYPE html>" +
+    doc.documentElement.outerHTML
+  );
+
+}
+
+
+/* =========================================================
+   LOAD URL
+========================================================= */
+
+async function fetchTarget(url){
+
+  showLoading();
+
+  error.style.display =
+    "none";
+
+  webpage.innerHTML =
+    "";
+
+  try{
+
+    const response =
+      await proxyFetch(url);
+
+    const type =
+      response.headers.get(
+        "content-type"
+      ) || "";
+
+    if(
+      type.includes("text/html") ||
+      type.includes("application/xhtml")
+    ){
+
+      const html =
+        await response.text();
+
+      const rewritten =
+        rewriteHTML(
+          html,
+          url
+        );
+
+      webpage.innerHTML =
+        rewritten;
+
+      attachNavigation();
+
+    }
+
+    else if(
+      type.includes("text/css")
+    ){
+
+      const css =
+        await response.text();
+
+      const style =
+        document.createElement("style");
+
+      style.textContent =
+        css;
+
+      webpage.appendChild(style);
+
+    }
+
+    else if(
+      type.startsWith("text/")
+    ){
+
+      const text =
+        await response.text();
+
+      const pre =
+        document.createElement("pre");
+
+      pre.style.whiteSpace =
+        "pre-wrap";
+
+      pre.style.padding =
+        "20px";
+
+      pre.textContent =
+        text;
+
+      webpage.appendChild(pre);
+
+    }
+
+    else{
+
+      throw new Error(
+        "Unsupported content type: " +
+        type
+      );
+
+    }
+
+
+    currentURL =
+      response.url || url;
+
+    address.value =
+      currentURL;
+
+    document.title =
+      getHostname(currentURL) ||
+      "Interstellar";
+
+    showWebPage();
+
+    hideLoading();
+
+    showStatus("Loaded");
+
+    addHistory(currentURL);
+
+    saveCurrentTab();
+
+  }
+  catch(err){
+
+    hideLoading();
+
+    webpage.innerHTML =
+      "";
+
+    error.style.display =
+      "flex";
+
+    errortext.textContent =
+      "The proxy could not load this destination. " +
+      "The target may block proxy requests, require " +
+      "JavaScript/WebSockets, or the configured proxy " +
+      "may be unavailable.\n\n" +
+      err.message;
+
+  }
+
+}
+
+
+/* =========================================================
+   NAVIGATION INTERCEPTION
+========================================================= */
+
+function attachNavigation(){
+
+  webpage
+    .querySelectorAll("a[href]")
+    .forEach(link=>{
+
+      link.addEventListener(
+        "click",
+        event=>{
+
+          const href =
+            link.getAttribute("href");
+
+          if(!href)
+            return;
+
+          if(
+            href.startsWith("#") ||
+            href.startsWith("javascript:")
+          ){
+            return;
+          }
+
+          event.preventDefault();
+
+          let target =
+            href;
+
+          /*
+            If the rewritten link already contains the
+            proxy prefix, recover its destination.
+          */
+
+          if(
+            target.startsWith(
+              PROXY_PREFIX
+            )
+          ){
+
+            try{
+
+              target =
+                decodeURIComponent(
+                  target.slice(
+                    PROXY_PREFIX.length
+                  )
+                );
+
+            }
+            catch{}
+
+          }
+
+          loadURL(
+            target
+          );
+
+        }
+      );
+
+    });
+
+
+  /*
+    Intercept forms.
+
+    GET forms can be converted into URL requests.
+  */
+
+  webpage
+    .querySelectorAll("form")
+    .forEach(form=>{
+
+      form.addEventListener(
+        "submit",
+        event=>{
+
+          event.preventDefault();
+
+          const method =
+            (
+              form.method ||
+              "GET"
+            ).toUpperCase();
+
+          if(method !== "GET"){
+
+            showStatus(
+              "POST forms are not supported by this static proxy"
+            );
+
+            return;
+
+          }
+
+          const action =
+            absoluteURL(
+              form.getAttribute("action") ||
+              currentURL,
+              currentURL
+            );
+
+          const data =
+            new FormData(form);
+
+          const params =
+            new URLSearchParams(data);
+
+          const finalURL =
+            action +
+            (
+              action.includes("?")
+                ? "&"
+                : "?"
+            ) +
+            params.toString();
+
+          loadURL(finalURL);
+
+        }
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   SHOW HOME / WEB
+========================================================= */
+
+function showHome(){
+
+  home.style.display =
+    "block";
+
+  webpage.style.display =
+    "none";
+
+  favoritesPage.style.display =
+    "none";
+
+  historyPage.style.display =
+    "none";
+
+  settingsPage.style.display =
+    "none";
+
+}
+
+function showWebPage(){
+
+  home.style.display =
+    "none";
+
+  webpage.style.display =
+    "block";
+
+  favoritesPage.style.display =
+    "none";
+
+  historyPage.style.display =
+    "none";
+
+  settingsPage.style.display =
+    "none";
+
+}
+
+function showPanel(panel){
+
+  home.style.display =
+    "none";
+
+  webpage.style.display =
+    "none";
+
+  favoritesPage.style.display =
+    "none";
+
+  historyPage.style.display =
+    "none";
+
+  settingsPage.style.display =
+    "none";
+
+  panel.style.display =
+    "block";
+
+}
+
+
+/* =========================================================
+   LOAD URL
+========================================================= */
+
+function loadURL(value){
+
+  const url =
+    normalizeURL(value);
+
+  if(!url)
+    return;
+
+  currentURL =
+    url;
+
+  address.value =
+    url;
+
+  addHistory(url);
+
+  fetchTarget(url);
+
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function addHistory(url){
+
+  historyList =
+    historyList.filter(
+      item=>item !== url
+    );
+
+  historyList.unshift(url);
+
+  historyList =
+    historyList.slice(
+      0,
+      100
+    );
+
+  localStorage.setItem(
+    "interstellarHistory",
+    JSON.stringify(historyList)
+  );
+
+  renderHistory();
+
+}
+
+
+/* =========================================================
+   RENDER HISTORY
+========================================================= */
+
+function renderHistory(){
+
+  const list =
+    document.getElementById(
+      "historyList"
+    );
+
+  if(!historyList.length){
+
+    list.textContent =
+      "No history yet.";
+
+    return;
+
+  }
+
+  list.innerHTML = "";
+
+  historyList.forEach(url=>{
+
+    const button =
+      document.createElement("button");
+
+    button.textContent =
+      url;
+
+    button.style.display =
+      "block";
+
+    button.style.width =
+      "100%";
+
+    button.style.textAlign =
+      "left";
+
+    button.onclick = ()=>{
+      loadURL(url);
+    };
+
+    list.appendChild(button);
+
   });
 
-  registerSW();
-})();
-  </script>
+}
+
+renderHistory();
+
+
+/* =========================================================
+   FAVORITES
+========================================================= */
+
+function toggleFavorite(){
+
+  if(!currentURL)
+    return;
+
+  if(
+    favorites.includes(currentURL)
+  ){
+
+    favorites =
+      favorites.filter(
+        x=>x !== currentURL
+      );
+
+    showStatus(
+      "Removed from favorites"
+    );
+
+  }
+  else{
+
+    favorites.push(
+      currentURL
+    );
+
+    showStatus(
+      "Added to favorites"
+    );
+
+  }
+
+  localStorage.setItem(
+    "interstellarFavorites",
+    JSON.stringify(favorites)
+  );
+
+  renderFavorites();
+
+}
+
+
+/* =========================================================
+   RENDER FAVORITES
+========================================================= */
+
+function renderFavorites(){
+
+  const list =
+    document.getElementById(
+      "favoritesList"
+    );
+
+  if(!favorites.length){
+
+    list.textContent =
+      "No favorites yet.";
+
+    return;
+
+  }
+
+  list.innerHTML = "";
+
+  favorites.forEach(url=>{
+
+    const button =
+      document.createElement("button");
+
+    button.textContent =
+      url;
+
+    button.style.display =
+      "block";
+
+    button.style.width =
+      "100%";
+
+    button.style.textAlign =
+      "left";
+
+    button.onclick = ()=>{
+      loadURL(url);
+    };
+
+    list.appendChild(button);
+
+  });
+
+}
+
+renderFavorites();
+
+
+/* =========================================================
+   BACK / FORWARD
+========================================================= */
+
+document
+  .getElementById("back")
+  .onclick = ()=>{
+
+    if(
+      window.history.length > 1
+    ){
+
+      window.history.back();
+
+    }
+    else{
+
+      showStatus(
+        "No previous page"
+      );
+
+    }
+
+  };
+
+
+document
+  .getElementById("forward")
+  .onclick = ()=>{
+
+    window.history.forward();
+
+  };
+
+
+/* =========================================================
+   RELOAD
+========================================================= */
+
+document
+  .getElementById("reload")
+  .onclick = ()=>{
+
+    if(currentURL){
+
+      fetchTarget(
+        currentURL
+      );
+
+    }
+    else{
+
+      showStatus(
+        "Nothing to reload"
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   ADDRESS BAR
+========================================================= */
+
+document
+  .getElementById("go")
+  .onclick = ()=>{
+    loadURL(address.value);
+  };
+
+
+address.addEventListener(
+  "keydown",
+  event=>{
+
+    if(event.key === "Enter"){
+
+      loadURL(
+        address.value
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   HOME SEARCH
+========================================================= */
+
+homeSearch.addEventListener(
+  "keydown",
+  event=>{
+
+    if(event.key === "Enter"){
+
+      loadURL(
+        homeSearch.value
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   RETRY
+========================================================= */
+
+document
+  .getElementById("retry")
+  .onclick = ()=>{
+
+    if(currentURL){
+
+      fetchTarget(
+        currentURL
+      );
+
+    }
+
+  };
+
+
+document
+  .getElementById("errorHome")
+  .onclick = ()=>{
+
+    error.style.display =
+      "none";
+
+    showHome();
+
+  };
+
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+document
+  .getElementById("fullscreen")
+  .onclick = async()=>{
+
+    try{
+
+      if(!document.fullscreenElement){
+
+        await document.documentElement
+          .requestFullscreen();
+
+      }
+      else{
+
+        await document.exitFullscreen();
+
+      }
+
+    }
+    catch{
+
+      showStatus(
+        "Fullscreen unavailable"
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   CLOAK
+========================================================= */
+
+function cloak(){
+
+  document.title =
+    "Google";
+
+  let icon =
+    document.querySelector(
+      "link[rel='icon']"
+    );
+
+  if(!icon){
+
+    icon =
+      document.createElement("link");
+
+    icon.rel =
+      "icon";
+
+    document.head.appendChild(
+      icon
+    );
+
+  }
+
+  icon.href =
+    "data:image/svg+xml," +
+    encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg"
+           viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="30"
+                fill="white"/>
+        <path d="M32 10a22 22 0 1 0 22 22H32z"
+              fill="#4285f4"/>
+      </svg>
+    `);
+
+  showStatus(
+    "Cloaked"
+  );
+
+}
+
+
+document
+  .getElementById("cloak")
+  .onclick =
+  cloak;
+
+document
+  .getElementById("cloakSetting")
+  .onclick =
+  cloak;
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+const searchEngine =
+  document.getElementById(
+    "searchEngine"
+  );
+
+searchEngine.value =
+  localStorage.getItem(
+    "interstellarSearchEngine"
+  ) || "google";
+
+
+searchEngine.onchange = ()=>{
+
+  localStorage.setItem(
+    "interstellarSearchEngine",
+    searchEngine.value
+  );
+
+  showStatus(
+    "Search engine updated"
+  );
+
+};
+
+
+document
+  .getElementById("clearHistory")
+  .onclick = ()=>{
+
+    historyList = [];
+
+    localStorage.removeItem(
+      "interstellarHistory"
+    );
+
+    renderHistory();
+
+    showStatus(
+      "History cleared"
+    );
+
+  };
+
+
+document
+  .getElementById("resetSettings")
+  .onclick = ()=>{
+
+    localStorage.removeItem(
+      "interstellarSearchEngine"
+    );
+
+    searchEngine.value =
+      "google";
+
+    showStatus(
+      "Settings reset"
+    );
+
+  };
+
+
+document
+  .getElementById("proxyDisplay")
+  .textContent =
+  PROXY_PREFIX;
+
+
+/* =========================================================
+   KEYBOARD SHORTCUTS
+========================================================= */
+
+document.addEventListener(
+  "keydown",
+  event=>{
+
+    if(
+      event.ctrlKey &&
+      event.key.toLowerCase() === "l"
+    ){
+
+      event.preventDefault();
+
+      address.focus();
+      address.select();
+
+    }
+
+    if(
+      event.ctrlKey &&
+      event.key.toLowerCase() === "d"
+    ){
+
+      event.preventDefault();
+
+      toggleFavorite();
+
+    }
+
+    if(
+      event.ctrlKey &&
+      event.key.toLowerCase() === "h"
+    ){
+
+      event.preventDefault();
+
+      showPanel(
+        historyPage
+      );
+
+    }
+
+    if(
+      event.ctrlKey &&
+      event.key.toLowerCase() === "j"
+    ){
+
+      event.preventDefault();
+
+      showPanel(
+        favoritesPage
+      );
+
+    }
+
+    if(
+      event.ctrlKey &&
+      event.key.toLowerCase() === "k"
+    ){
+
+      event.preventDefault();
+
+      showPanel(
+        settingsPage
+      );
+
+    }
+
+    if(
+      event.key === "Escape"
+    ){
+
+      showHome();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   SIMPLE TABS
+========================================================= */
+
+function createTab(url=""){
+
+  const id =
+    Date.now().toString(36) +
+    Math.random().toString(36)
+      .slice(2);
+
+  const tab =
+    document.createElement("div");
+
+  tab.className =
+    "tab";
+
+  tab.dataset.id =
+    id;
+
+  tab.innerHTML = `
+    <span class="tab-title">New Tab</span>
+    <button class="tab-close">×</button>
+  `;
+
+  const title =
+    tab.querySelector(
+      ".tab-title"
+    );
+
+  const close =
+    tab.querySelector(
+      ".tab-close"
+    );
+
+  title.onclick = ()=>{
+    activateTab(id);
+  };
+
+  close.onclick = event=>{
+
+    event.stopPropagation();
+
+    closeTab(id);
+
+  };
+
+  tabs.insertBefore(
+    tab,
+    document.getElementById(
+      "newtab"
+    )
+  );
+
+  tabsData.push({
+    id:id,
+    url:url,
+    title:"New Tab"
+  });
+
+  activateTab(id);
+
+  if(url){
+    loadURL(url);
+  }
+
+}
+
+
+function activateTab(id){
+
+  activeTab =
+    id;
+
+  document
+    .querySelectorAll(".tab")
+    .forEach(tab=>{
+
+      tab.classList.toggle(
+        "active",
+        tab.dataset.id === id
+      );
+
+    });
+
+  const data =
+    tabsData.find(
+      t=>t.id === id
+    );
+
+  if(data){
+
+    address.value =
+      data.url || "";
+
+  }
+
+}
+
+
+function closeTab(id){
+
+  const index =
+    tabsData.findIndex(
+      t=>t.id === id
+    );
+
+  if(index === -1)
+    return;
+
+  tabsData.splice(
+    index,
+    1
+  );
+
+  const tab =
+    document.querySelector(
+      `.tab[data-id="${id}"]`
+    );
+
+  if(tab)
+    tab.remove();
+
+  if(!tabsData.length){
+
+    createTab();
+
+    return;
+
+  }
+
+  if(activeTab === id){
+
+    const next =
+      tabsData[
+        Math.max(
+          0,
+          index - 1
+        )
+      ];
+
+    activateTab(
+      next.id
+    );
+
+    if(next.url){
+
+      loadURL(
+        next.url
+      );
+
+    }
+    else{
+
+      showHome();
+
+    }
+
+  }
+
+}
+
+
+function saveCurrentTab(){
+
+  if(!activeTab)
+    return;
+
+  const data =
+    tabsData.find(
+      t=>t.id === activeTab
+    );
+
+  if(!data)
+    return;
+
+  data.url =
+    currentURL;
+
+  data.title =
+    getHostname(
+      currentURL
+    );
+
+  const tab =
+    document.querySelector(
+      `.tab[data-id="${activeTab}"]`
+    );
+
+  if(tab){
+
+    const title =
+      tab.querySelector(
+        ".tab-title"
+      );
+
+    title.textContent =
+      data.title ||
+      "New Tab";
+
+  }
+
+}
+
+
+/* =========================================================
+   NEW TAB
+========================================================= */
+
+document
+  .getElementById("newtab")
+  .onclick = ()=>{
+    createTab();
+  };
+
+
+/* =========================================================
+   HOME NAVIGATION BUTTONS
+========================================================= */
+
+document.addEventListener(
+  "click",
+  event=>{
+
+    const target =
+      event.target.closest(
+        "[data-action]"
+      );
+
+    if(!target)
+      return;
+
+    const action =
+      target.dataset.action;
+
+    if(action === "home"){
+      showHome();
+    }
+
+    if(action === "favorites"){
+      showPanel(
+        favoritesPage
+      );
+    }
+
+    if(action === "history"){
+      showPanel(
+        historyPage
+      );
+    }
+
+    if(action === "settings"){
+      showPanel(
+        settingsPage
+      );
+    }
+
+  }
+);
+
+
+/* =========================================================
+   ADD QUICK ACTIONS TO HOME
+========================================================= */
+
+const homeInner =
+  document.querySelector(
+    ".home-inner"
+  );
+
+const actionSection =
+  document.createElement("div");
+
+actionSection.className =
+  "section";
+
+actionSection.innerHTML = `
+  <div class="section-head">
+    <h2>Browser</h2>
+    <span>Tools</span>
+  </div>
+
+  <div class="cards">
+
+    <div class="card" data-action="home">
+      <div class="card-icon">🏠</div>
+      <div class="card-name">Home</div>
+      <div class="card-desc">Return home</div>
+    </div>
+
+    <div class="card" data-action="favorites">
+      <div class="card-icon">⭐</div>
+      <div class="card-name">Favorites</div>
+      <div class="card-desc">Saved websites</div>
+    </div>
+
+    <div class="card" data-action="history">
+      <div class="card-icon">🕘</div>
+      <div class="card-name">History</div>
+      <div class="card-desc">Recent websites</div>
+    </div>
+
+    <div class="card" data-action="settings">
+      <div class="card-icon">⚙️</div>
+      <div class="card-name">Settings</div>
+      <div class="card-desc">Browser settings</div>
+    </div>
+
+    <div class="card" onclick="toggleFavorite()">
+      <div class="card-icon">⭐</div>
+      <div class="card-name">Favorite Page</div>
+      <div class="card-desc">Save current page</div>
+    </div>
+
+  </div>
+`;
+
+homeInner.appendChild(
+  actionSection
+);
+
+
+/* =========================================================
+   HOSTNAME
+========================================================= */
+
+function getHostname(url){
+
+  try{
+
+    return new URL(url).hostname;
+
+  }
+  catch{
+
+    return "";
+
+  }
+
+}
+
+
+/* =========================================================
+   INITIAL TAB
+========================================================= */
+
+createTab();
+
+
+/* =========================================================
+   INITIAL STATE
+========================================================= */
+
+showHome();
+
+</script>
+
 </body>
 </html>
