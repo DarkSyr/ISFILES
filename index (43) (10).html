@@ -238,49 +238,90 @@ button:hover{background:#333}
 
 <!-- UV client files -->
 <script src="../uv.bundle.js"></script>
-<script src="../uv.config.js"></script>
-<script src="../uv.handler.js"></script>
+<script src="./uv.config.js"></script>
+<script src="./uv.handler.js"></script>
 
 <script>
 "use strict";
 
-const page=document.getElementById("page");
-const address=document.getElementById("address");
-const home=document.getElementById("home");
-const homeinput=document.getElementById("homeinput");
-const loading=document.getElementById("loading");
-const error=document.getElementById("error");
-const errortext=document.getElementById("errortext");
-const status=document.getElementById("status");
+const page = document.getElementById("page");
+const address = document.getElementById("address");
+const home = document.getElementById("home");
+const homeinput = document.getElementById("homeinput");
+const loading = document.getElementById("loading");
+const error = document.getElementById("error");
+const errortext = document.getElementById("errortext");
+const status = document.getElementById("status");
 
-let currentURL="";
-let historyList=[];
-let historyPosition=-1;
+let currentURL = "";
+let historyList = [];
+let historyPosition = -1;
+
+const BASE = new URL("./", location.href);
+
+const UV_BUNDLE =
+  new URL("uv.bundle.js", BASE).href;
+
+const UV_CONFIG =
+  new URL("uv.config.js", BASE).href;
+
+const UV_HANDLER =
+  new URL("uv.handler.js", BASE).href;
+
+const UV_SW =
+  new URL("uv.sw.js", BASE).href;
+
+const UV_SERVICE =
+  new URL("service/", BASE).pathname;
+
+
+/* ---------------- STATUS ---------------- */
 
 function showStatus(text){
-  status.textContent=text;
-  status.style.display="block";
+
+  status.textContent = text;
+  status.style.display = "block";
 
   clearTimeout(status.timer);
 
-  status.timer=setTimeout(()=>{
-    status.style.display="none";
+  status.timer = setTimeout(()=>{
+    status.style.display = "none";
   },1800);
 }
 
+
+/* ---------------- LOADING ---------------- */
+
 function showLoading(){
-  loading.style.display="flex";
+  loading.style.display = "flex";
 }
 
 function hideLoading(){
-  loading.style.display="none";
+  loading.style.display = "none";
 }
+
+
+/* ---------------- ERROR ---------------- */
+
+function showError(message){
+
+  hideLoading();
+
+  page.src = "about:blank";
+
+  error.style.display = "flex";
+
+  errortext.textContent = message;
+}
+
+
+/* ---------------- URL ---------------- */
 
 function normalizeURL(value){
 
-  value=String(value||"").trim();
+  value = String(value || "").trim();
 
-  if(!value)return null;
+  if(!value) return null;
 
   if(
     value.startsWith("http://") ||
@@ -293,271 +334,511 @@ function normalizeURL(value){
     !value.includes(" ") &&
     value.includes(".")
   ){
-    return "https://"+value;
+    return "https://" + value;
   }
 
-  return "https://www.google.com/search?q="+
-    encodeURIComponent(value);
+  return (
+    "https://www.google.com/search?q=" +
+    encodeURIComponent(value)
+  );
 }
+
+
+/* ---------------- HISTORY ---------------- */
 
 function addHistory(url){
 
   if(
-    historyPosition>=0 &&
-    historyList[historyPosition]===url
+    historyPosition >= 0 &&
+    historyList[historyPosition] === url
   ){
     return;
   }
 
-  historyList=historyList.slice(
-    0,
-    historyPosition+1
-  );
+  historyList =
+    historyList.slice(
+      0,
+      historyPosition + 1
+    );
 
   historyList.push(url);
 
-  historyPosition=historyList.length-1;
+  historyPosition =
+    historyList.length - 1;
 }
 
-function showError(message){
 
-  hideLoading();
+/* ---------------- UV STARTUP ---------------- */
 
-  error.style.display="flex";
+let uvReady = false;
 
-  errortext.textContent=message;
-}
+async function startUV(){
 
-async function registerUV(){
+  if(uvReady)
+    return true;
+
+  showStatus("Starting Ultraviolet...");
+
+  /*
+   * Make absolutely sure the service-worker
+   * URL is inside the current HTML Hoster folder.
+   */
+
+  console.log("UV base:", BASE.href);
+  console.log("UV service worker:", UV_SW);
+  console.log("UV scope:", UV_SERVICE);
 
   if(!("serviceWorker" in navigator)){
+
     throw new Error(
-      "This browser does not support Service Workers."
+      "Service Workers are not supported by this browser."
     );
+
   }
 
   /*
-   * UV's service worker must be hosted on the
-   * same origin as this HTML file.
+   * Register the worker using the page-relative URL.
    */
 
-  const UV_BASE = new URL("./", location.href);
+  const registration =
+    await navigator.serviceWorker.register(
+      UV_SW,
+      {
+        scope: UV_SERVICE
+      }
+    );
 
-const uvSW = new URL("uv.sw.js", UV_BASE).href;
-const uvScope = new URL("service/", UV_BASE).pathname;
-
-const registration =
-  await navigator.serviceWorker.register(uvSW, {
-    scope: uvScope
-  });
+  /*
+   * Wait for activation.
+   */
 
   await navigator.serviceWorker.ready;
 
-  return registration;
+  /*
+   * Check that the current page is actually
+   * controlled by the UV service worker.
+   */
+
+  if(!navigator.serviceWorker.controller){
+
+    /*
+     * A newly registered service worker does not
+     * necessarily control the current page until
+     * the next navigation.
+     */
+
+    showStatus(
+      "Activating UV..."
+    );
+
+    await new Promise(resolve=>{
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        resolve,
+        {once:true}
+      );
+
+      setTimeout(resolve,3000);
+    });
+
+  }
+
+  uvReady = true;
+
+  showStatus("Ultraviolet ready");
+
+  return true;
 }
 
-async function loadURL(value,record=true){
 
-  const url=normalizeURL(value);
+/* ---------------- PROXY URL ---------------- */
 
-  if(!url)return;
+function makeProxyURL(url){
+
+  /*
+   * __uv$config is supplied by uv.config.js.
+   */
+
+  if(
+    typeof self.__uv$config === "undefined"
+  ){
+
+    throw new Error(
+      "uv.config.js did not create __uv$config."
+    );
+
+  }
+
+  const config =
+    self.__uv$config;
+
+  /*
+   * Encode the destination.
+   */
+
+  const encoded =
+    config.encodeUrl(url);
+
+  /*
+   * IMPORTANT:
+   *
+   * Do NOT use:
+   *
+   * location.origin + config.prefix
+   *
+   * because HTML Hoster puts the page inside
+   * /p/HG66NK2B/.
+   */
+
+  return new URL(
+    config.prefix + encoded,
+    BASE
+  ).href;
+}
+
+
+/* ---------------- LOAD ---------------- */
+
+async function loadURL(
+  value,
+  record = true
+){
+
+  const url =
+    normalizeURL(value);
+
+  if(!url)
+    return;
 
   showLoading();
 
-  error.style.display="none";
+  error.style.display =
+    "none";
 
   if(record){
     addHistory(url);
   }
 
-  currentURL=url;
-  address.value=url;
+  currentURL =
+    url;
 
-  home.style.display="none";
+  address.value =
+    url;
+
+  home.style.display =
+    "none";
 
   try{
 
-    const registration=
-      await registerUV();
+    document.title =
+      "Web — " +
+      new URL(url).hostname;
 
-    if(!registration){
-      throw new Error(
-        "Ultraviolet service worker registration failed."
-      );
-    }
+  }catch{
+
+    document.title =
+      "Web";
+
+  }
+
+
+  try{
 
     /*
-     * UV uses its configured prefix to construct
-     * the proxied URL.
+     * Start UV.
      */
 
-    const config=window.__uv$config;
+    await startUV();
 
-    if(!config){
-      throw new Error(
-        "uv.config.js did not create __uv$config."
-      );
-    }
 
-    const encoded=
-      config.encodeUrl(url);
+    /*
+     * Create the proxied URL.
+     */
 
-    const proxyURL=
-      location.origin+
-      config.prefix+
-      encoded;
+    const proxyURL =
+      makeProxyURL(url);
 
-    page.onload=()=>{
+    console.log(
+      "Original:",
+      url
+    );
+
+    console.log(
+      "Proxy:",
+      proxyURL
+    );
+
+
+    /*
+     * Navigate iframe.
+     */
+
+    page.onload = ()=>{
       hideLoading();
       showStatus("Loaded");
     };
 
-    page.onerror=()=>{
-      showError(
-        "Ultraviolet could not display the destination."
-      );
-    };
+    page.src =
+      proxyURL;
 
-    page.src=proxyURL;
 
-    document.title=
-      "Web — "+
-      new URL(url).hostname;
+    /*
+     * Don't spin forever.
+     */
+
+    setTimeout(()=>{
+
+      if(
+        currentURL === url &&
+        loading.style.display !== "none"
+      ){
+
+        hideLoading();
+
+        showStatus(
+          "Proxy is taking longer than expected"
+        );
+
+      }
+
+    },10000);
+
 
   }catch(e){
 
-    console.error(e);
+    console.error(
+      "UV error:",
+      e
+    );
 
     showError(
-      "Ultraviolet could not be started.\n\n"+
-      e.message+
-      "\n\n"+
-      "Make sure these files exist on the same HTTPS host:\n"+
-      "./uv.bundle.js\n"+
-      "./uv.config.js\n"+
-      "./uv.handler.js\n"+
-      "./uv.sw.js\n\n"+
-      "A working Bare/transport server is also required."
+      "Ultraviolet could not be started.\n\n" +
+      e.message +
+      "\n\n" +
+      "Check that these files exist in:\n" +
+      BASE.href + "\n\n" +
+      "uv.bundle.js\n" +
+      "uv.config.js\n" +
+      "uv.handler.js\n" +
+      "uv.sw.js"
     );
+
   }
+
 }
 
-/* Back */
 
-document.getElementById("back").onclick=()=>{
+/* ---------------- BACK ---------------- */
 
-  if(historyPosition<=0){
-    showStatus("No previous page");
+document
+.getElementById("back")
+.onclick = ()=>{
+
+  if(historyPosition <= 0){
+
+    showStatus(
+      "No previous page"
+    );
+
     return;
+
   }
 
   historyPosition--;
 
   loadURL(
-    historyList[historyPosition],
+    historyList[
+      historyPosition
+    ],
     false
   );
+
 };
 
-/* Forward */
 
-document.getElementById("forward").onclick=()=>{
+/* ---------------- FORWARD ---------------- */
+
+document
+.getElementById("forward")
+.onclick = ()=>{
 
   if(
-    historyPosition>=
-    historyList.length-1
+    historyPosition >=
+    historyList.length - 1
   ){
-    showStatus("No next page");
+
+    showStatus(
+      "No next page"
+    );
+
     return;
+
   }
 
   historyPosition++;
 
   loadURL(
-    historyList[historyPosition],
+    historyList[
+      historyPosition
+    ],
     false
   );
+
 };
 
-/* Reload */
 
-document.getElementById("reload").onclick=()=>{
+/* ---------------- RELOAD ---------------- */
+
+document
+.getElementById("reload")
+.onclick = ()=>{
 
   if(!currentURL){
-    showStatus("Nothing to reload");
+
+    showStatus(
+      "Nothing to reload"
+    );
+
     return;
+
   }
 
-  loadURL(currentURL,false);
+  loadURL(
+    currentURL,
+    false
+  );
+
 };
 
-/* Go */
 
-document.getElementById("go").onclick=()=>{
-  loadURL(address.value);
+/* ---------------- GO ---------------- */
+
+document
+.getElementById("go")
+.onclick = ()=>{
+
+  loadURL(
+    address.value
+  );
+
 };
 
-address.addEventListener("keydown",e=>{
-  if(e.key==="Enter"){
-    loadURL(address.value);
+address.addEventListener(
+  "keydown",
+  e=>{
+
+    if(e.key === "Enter"){
+
+      loadURL(
+        address.value
+      );
+
+    }
+
   }
-});
+);
 
-/* Home */
 
-homeinput.addEventListener("keydown",e=>{
-  if(e.key==="Enter"){
-    loadURL(homeinput.value);
+/* ---------------- HOME ---------------- */
+
+homeinput.addEventListener(
+  "keydown",
+  e=>{
+
+    if(e.key === "Enter"){
+
+      loadURL(
+        homeinput.value
+      );
+
+    }
+
   }
-});
+);
 
-/* Retry */
 
-document.getElementById("retry").onclick=()=>{
+/* ---------------- RETRY ---------------- */
+
+document
+.getElementById("retry")
+.onclick = ()=>{
 
   if(currentURL){
-    loadURL(currentURL,false);
+
+    loadURL(
+      currentURL,
+      false
+    );
+
   }
+
 };
 
-/* Fullscreen */
 
-document.getElementById("fullscreen").onclick=async()=>{
+/* ---------------- FULLSCREEN ---------------- */
+
+document
+.getElementById("fullscreen")
+.onclick =
+async()=>{
 
   try{
 
     if(!document.fullscreenElement){
-      await document.documentElement.requestFullscreen();
+
+      await document
+        .documentElement
+        .requestFullscreen();
+
     }else{
+
       await document.exitFullscreen();
+
     }
 
   }catch{
-    showStatus("Fullscreen unavailable");
+
+    showStatus(
+      "Fullscreen unavailable"
+    );
+
   }
+
 };
 
-/* Cloak */
 
-document.getElementById("cloak").onclick=()=>{
+/* ---------------- CLOAK ---------------- */
 
-  document.title="Google";
+document
+.getElementById("cloak")
+.onclick = ()=>{
 
-  let icon=document.querySelector(
-    "link[rel='icon']"
-  );
+  document.title =
+    "Google";
+
+  let icon =
+    document.querySelector(
+      "link[rel='icon']"
+    );
 
   if(!icon){
 
-    icon=document.createElement("link");
+    icon =
+      document.createElement(
+        "link"
+      );
 
-    icon.rel="icon";
+    icon.rel =
+      "icon";
 
-    document.head.appendChild(icon);
+    document.head.appendChild(
+      icon
+    );
+
   }
 
-  icon.href=
-    "data:image/svg+xml,"+
+  icon.href =
+    "data:image/svg+xml," +
     encodeURIComponent(`
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -576,49 +857,97 @@ document.getElementById("cloak").onclick=()=>{
       </svg>
     `);
 
-  showStatus("Cloaked");
+  showStatus(
+    "Cloaked"
+  );
+
 };
 
-/* Keyboard */
 
-document.addEventListener("keydown",e=>{
+/* ---------------- KEYBOARD ---------------- */
 
-  if(
-    e.ctrlKey &&
-    e.key.toLowerCase()==="l"
-  ){
+document.addEventListener(
+  "keydown",
+  e=>{
 
-    e.preventDefault();
+    if(
+      e.ctrlKey &&
+      e.key.toLowerCase() === "l"
+    ){
 
-    address.focus();
-    address.select();
+      e.preventDefault();
+
+      address.focus();
+
+      address.select();
+
+    }
+
+    if(
+      e.altKey &&
+      e.key === "ArrowLeft"
+    ){
+
+      e.preventDefault();
+
+      document
+        .getElementById("back")
+        .click();
+
+    }
+
+    if(
+      e.altKey &&
+      e.key === "ArrowRight"
+    ){
+
+      e.preventDefault();
+
+      document
+        .getElementById("forward")
+        .click();
+
+    }
+
   }
+);
 
-  if(
-    e.altKey &&
-    e.key==="ArrowLeft"
-  ){
 
-    e.preventDefault();
+/* ---------------- START ---------------- */
 
-    document.getElementById("back").click();
-  }
+console.log(
+  "UV base:",
+  BASE.href
+);
 
-  if(
-    e.altKey &&
-    e.key==="ArrowRight"
-  ){
+console.log(
+  "UV bundle:",
+  UV_BUNDLE
+);
 
-    e.preventDefault();
+console.log(
+  "UV config:",
+  UV_CONFIG
+);
 
-    document.getElementById("forward").click();
-  }
+console.log(
+  "UV handler:",
+  UV_HANDLER
+);
 
-});
+console.log(
+  "UV service worker:",
+  UV_SW
+);
 
-showStatus("Ready");
+console.log(
+  "UV scope:",
+  UV_SERVICE
+);
 
+showStatus(
+  "Ready"
+);
 </script>
-
 </body>
 </html>
