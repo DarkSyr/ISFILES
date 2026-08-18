@@ -1,588 +1,132 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Web</title>
-
+<title>UV One-Click Generator</title>
 <style>
 *{box-sizing:border-box}
-
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#080808;
-  color:#fff;
-  font-family:Arial,sans-serif
-}
-
-#bar{
-  height:58px;
-  background:#111;
-  border-bottom:1px solid #292929;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  padding:8px;
-  position:relative;
-  z-index:1000
-}
-
-button{
-  height:40px;
-  min-width:40px;
-  border:0;
-  border-radius:8px;
-  background:#222;
-  color:#fff;
-  cursor:pointer;
-  font-size:16px
-}
-
-button:hover{
-  background:#333
-}
-
-#address{
-  flex:1;
-  min-width:0;
-  height:40px;
-  border:1px solid #333;
-  outline:none;
-  border-radius:8px;
-  background:#191919;
-  color:#fff;
-  padding:0 13px;
-  font-size:14px
-}
-
-#go{
-  background:#fff;
-  color:#000;
-  font-weight:bold
-}
-
-#page{
-  position:absolute;
-  top:58px;
-  left:0;
-  width:100%;
-  height:calc(100% - 58px);
-  border:0;
-  background:#fff
-}
-
-#home{
-  position:absolute;
-  inset:58px 0 0;
-  background:
-    radial-gradient(circle at center,#202020,#080808 65%);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  z-index:20
-}
-
-#homebox{
-  width:min(700px,90%)
-}
-
-#home h1{
-  font-size:60px;
-  margin:0 0 10px
-}
-
-#home p{
-  color:#999;
-  margin-bottom:25px
-}
-
-#homeinput{
-  width:100%;
-  height:52px;
-  border-radius:10px;
-  border:1px solid #333;
-  background:#151515;
-  color:#fff;
-  padding:0 15px;
-  font-size:15px;
-  outline:none
-}
-
-#loading{
-  position:fixed;
-  inset:58px 0 0;
-  background:rgba(0,0,0,.75);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:5000
-}
-
-.spinner{
-  width:42px;
-  height:42px;
-  border:4px solid #444;
-  border-top-color:#fff;
-  border-radius:50%;
-  animation:spin .7s linear infinite
-}
-
-@keyframes spin{
-  to{transform:rotate(360deg)}
-}
-
-#error{
-  position:fixed;
-  inset:58px 0 0;
-  background:#080808;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  z-index:4000;
-  padding:30px
-}
-
-#errorbox{
-  max-width:650px
-}
-
-#error h2{
-  font-size:28px
-}
-
-#error p{
-  color:#aaa;
-  line-height:1.6;
-  white-space:pre-wrap
-}
-
-#error button{
-  margin-top:10px
-}
-
-#status{
-  position:fixed;
-  bottom:15px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#222;
-  border:1px solid #444;
-  padding:8px 14px;
-  border-radius:20px;
-  display:none;
-  z-index:9999;
-  font-size:12px
-}
+body{margin:0;min-height:100vh;background:#080808;color:#fff;font:15px Arial,sans-serif;display:grid;place-items:center;padding:24px}
+.box{width:min(760px,100%);background:#111;border:1px solid #292929;border-radius:16px;padding:28px;box-shadow:0 20px 70px #000}
+h1{margin:0 0 8px;font-size:30px}
+p{color:#aaa;line-height:1.55}
+button{border:0;border-radius:9px;background:#fff;color:#000;padding:13px 18px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+#log{margin-top:18px;background:#080808;border:1px solid #292929;border-radius:10px;padding:14px;white-space:pre-wrap;max-height:280px;overflow:auto;font:12px monospace;color:#bbb}
+.ok{color:#8f8}.bad{color:#f88}
+small{color:#777}
 </style>
 </head>
-
 <body>
-
-<div id="bar">
-
-<button id="back" title="Back">←</button>
-<button id="forward" title="Forward">→</button>
-<button id="reload" title="Reload">↻</button>
-
-<input
- id="address"
- placeholder="Enter URL or search..."
- autocomplete="off"
- spellcheck="false"
->
-
-<button id="go">Go</button>
-<button id="cloak" title="Cloak">◉</button>
-<button id="fullscreen" title="Fullscreen">⛶</button>
-
+<div class="box">
+<h1>Ultraviolet One-Click Generator</h1>
+<p>
+This generator downloads the exact UV files currently stored in
+the <b>DarkSyr/ISFILES</b> repository and writes a complete
+same-origin UV deployment into a folder you choose.
+</p>
+<p>
+The generated site contains the UV bundle, handler, configuration,
+service worker, root service worker, and a browser UI. The generated
+site still needs a working Bare server because UV itself does not
+provide the network transport.
+</p>
+<button id="generate">Choose folder &amp; generate UV</button>
+<div id="log">Ready.</div>
+<p><small>Use Chrome/Edge on HTTPS or localhost. File System Access is required.</small></p>
 </div>
-
-<iframe
- id="page"
- allow="fullscreen; autoplay; clipboard-read; clipboard-write"
- referrerpolicy="no-referrer">
-</iframe>
-
-<div id="home">
-
-<div id="homebox">
-
-<h1>Web</h1>
-
-<p>Single-file web viewer</p>
-
-<input
- id="homeinput"
- placeholder="https://example.com"
- autocomplete="off"
->
-
-</div>
-
-</div>
-
-<div id="loading">
-<div class="spinner"></div>
-</div>
-
-<div id="error">
-
-<div id="errorbox">
-
-<h2>Could not load this website</h2>
-
-<p id="errortext"></p>
-
-<button id="retry">Retry</button>
-
-</div>
-
-</div>
-
-<div id="status"></div>
 
 <script>
 "use strict";
 
-const page = document.getElementById("page");
-const address = document.getElementById("address");
-const home = document.getElementById("home");
-const homeinput = document.getElementById("homeinput");
-const loading = document.getElementById("loading");
-const error = document.getElementById("error");
-const errortext = document.getElementById("errortext");
-const status = document.getElementById("status");
+const files = {
+  "index.html":
+`__INDEX_HTML__`,
+  "uv.bundle.js":
+`__UV_BUNDLE__`,
+  "uv.config.js":
+`__UV_CONFIG__`,
+  "uv.handler.js":
+`__UV_HANDLER__`,
+  "uv.sw.js":
+`__UV_SW__`,
+  "sw.js":
+`__ROOT_SW__`
+};
 
-let currentURL = "";
-let historyList = [];
-let historyPosition = -1;
+const logBox=document.getElementById("log");
+const button=document.getElementById("generate");
 
-function showStatus(text){
-  status.textContent = text;
-  status.style.display = "block";
-
-  clearTimeout(status.timer);
-
-  status.timer = setTimeout(()=>{
-    status.style.display = "none";
-  },1800);
+function log(s,cls=""){
+  const line=document.createElement("div");
+  line.textContent=s;
+  if(cls) line.className=cls;
+  logBox.appendChild(line);
+  logBox.scrollTop=logBox.scrollHeight;
 }
 
-function showLoading(){
-  loading.style.display = "flex";
+async function writeFile(dir,name,text){
+  const h=await dir.getFileHandle(name,{create:true});
+  const w=await h.createWritable();
+  await w.write(text);
+  await w.close();
 }
 
-function hideLoading(){
-  loading.style.display = "none";
-}
-
-function normalizeURL(value){
-
-  value = String(value || "").trim();
-
-  if(!value) return null;
-
-  if(
-    value.startsWith("http://") ||
-    value.startsWith("https://")
-  ){
-    return value;
-  }
-
-  if(
-    !value.includes(" ") &&
-    value.includes(".")
-  ){
-    return "https://" + value;
-  }
-
-  return (
-    "https://www.google.com/search?q=" +
-    encodeURIComponent(value)
-  );
-}
-
-function addHistory(url){
-
-  if(
-    historyPosition >= 0 &&
-    historyList[historyPosition] === url
-  ){
+async function generate(){
+  if(!window.showDirectoryPicker){
+    log("Your browser does not support the File System Access API.","bad");
+    log("Use a recent Chrome or Edge desktop browser.");
     return;
   }
 
-  historyList = historyList.slice(
-    0,
-    historyPosition + 1
-  );
-
-  historyList.push(url);
-
-  historyPosition =
-    historyList.length - 1;
-}
-
-function showError(message){
-
-  hideLoading();
-
-  page.src = "about:blank";
-
-  error.style.display = "flex";
-
-  errortext.textContent = message;
-}
-
-function loadURL(value, record = true){
-
-  const url = normalizeURL(value);
-
-  if(!url) return;
-
-  showLoading();
-
-  error.style.display = "none";
-
-  if(record){
-    addHistory(url);
-  }
-
-  currentURL = url;
-  address.value = url;
-
-  home.style.display = "none";
+  button.disabled=true;
+  logBox.textContent="";
 
   try{
-    document.title =
-      "Web — " + new URL(url).hostname;
-  }catch{
-    document.title = "Web";
-  }
+    log("Choose the folder where the generated site should be created...");
+    const root=await window.showDirectoryPicker({mode:"readwrite"});
 
-  page.onload = ()=>{
-    hideLoading();
-    showStatus("Loaded");
-  };
+    log("Writing index.html...");
+    await writeFile(root,"index.html",files["index.html"]);
 
-  page.onerror = ()=>{
-    showError(
-      "The browser refused to display this website.\n\n" +
-      "This single-file version does not use a proxy server. " +
-      "If the destination sends X-Frame-Options or CSP " +
-      "frame restrictions, Chrome prevents it from being " +
-      "displayed inside this iframe."
-    );
-  };
+    log("Writing uv.bundle.js...");
+    await writeFile(root,"uv.bundle.js",files["uv.bundle.js"]);
 
-  page.src = url;
+    log("Writing uv.config.js...");
+    await writeFile(root,"uv.config.js",files["uv.config.js"]);
 
-  /*
-   * iframe navigation errors are not always exposed
-   * to JavaScript, so prevent an infinite spinner.
-   */
-  setTimeout(()=>{
-    if(
-      currentURL === url &&
-      loading.style.display !== "none"
-    ){
-      hideLoading();
+    log("Writing uv.handler.js...");
+    await writeFile(root,"uv.handler.js",files["uv.handler.js"]);
 
-      showStatus(
-        "The site may block iframe embedding"
-      );
-    }
-  },8000);
-}
+    log("Writing uv.sw.js...");
+    await writeFile(root,"uv.sw.js",files["uv.sw.js"]);
 
-/* Back */
+    log("Writing sw.js...");
+    await writeFile(root,"sw.js",files["sw.js"]);
 
-document.getElementById("back").onclick = ()=>{
-
-  if(historyPosition <= 0){
-    showStatus("No previous page");
-    return;
-  }
-
-  historyPosition--;
-
-  loadURL(
-    historyList[historyPosition],
-    false
-  );
-};
-
-/* Forward */
-
-document.getElementById("forward").onclick = ()=>{
-
-  if(
-    historyPosition >=
-    historyList.length - 1
-  ){
-    showStatus("No next page");
-    return;
-  }
-
-  historyPosition++;
-
-  loadURL(
-    historyList[historyPosition],
-    false
-  );
-};
-
-/* Reload */
-
-document.getElementById("reload").onclick = ()=>{
-
-  if(!currentURL){
-    showStatus("Nothing to reload");
-    return;
-  }
-
-  showLoading();
-
-  page.src = currentURL;
-};
-
-/* Go */
-
-document.getElementById("go").onclick = ()=>{
-  loadURL(address.value);
-};
-
-address.addEventListener("keydown", e=>{
-  if(e.key === "Enter"){
-    loadURL(address.value);
-  }
-});
-
-/* Home */
-
-homeinput.addEventListener("keydown", e=>{
-  if(e.key === "Enter"){
-    loadURL(homeinput.value);
-  }
-});
-
-/* Retry */
-
-document.getElementById("retry").onclick = ()=>{
-
-  if(currentURL){
-    loadURL(currentURL, false);
-  }
-};
-
-/* Fullscreen */
-
-document.getElementById("fullscreen").onclick = async()=>{
-
-  try{
-
-    if(!document.fullscreenElement){
-
-      await document.documentElement.requestFullscreen();
-
+    log("");
+    log("DONE — UV deployment generated.","ok");
+    log("");
+    log("Upload ALL six files to the same directory:");
+    log("  index.html");
+    log("  uv.bundle.js");
+    log("  uv.config.js");
+    log("  uv.handler.js");
+    log("  uv.sw.js");
+    log("  sw.js");
+    log("");
+    log("The host must serve them over HTTPS.");
+  }catch(e){
+    if(e && e.name==="AbortError"){
+      log("Folder selection cancelled.");
     }else{
-
-      await document.exitFullscreen();
-
+      log("Generation failed: "+(e?.message||e),"bad");
     }
-
-  }catch{
-
-    showStatus("Fullscreen unavailable");
-
+  }finally{
+    button.disabled=false;
   }
-};
+}
 
-/* Cloak */
-
-document.getElementById("cloak").onclick = ()=>{
-
-  document.title = "Google";
-
-  let icon =
-    document.querySelector("link[rel='icon']");
-
-  if(!icon){
-
-    icon = document.createElement("link");
-
-    icon.rel = "icon";
-
-    document.head.appendChild(icon);
-  }
-
-  icon.href =
-    "data:image/svg+xml," +
-    encodeURIComponent(`
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 64 64">
-
-        <circle
-          cx="32"
-          cy="32"
-          r="30"
-          fill="white"/>
-
-        <path
-          d="M32 10a22 22 0 1 0 22 22H32z"
-          fill="#4285f4"/>
-
-      </svg>
-    `);
-
-  showStatus("Cloaked");
-};
-
-/* Keyboard */
-
-document.addEventListener("keydown", e=>{
-
-  if(
-    e.ctrlKey &&
-    e.key.toLowerCase() === "l"
-  ){
-
-    e.preventDefault();
-
-    address.focus();
-    address.select();
-  }
-
-  if(
-    e.altKey &&
-    e.key === "ArrowLeft"
-  ){
-
-    e.preventDefault();
-
-    document.getElementById("back").click();
-  }
-
-  if(
-    e.altKey &&
-    e.key === "ArrowRight"
-  ){
-
-    e.preventDefault();
-
-    document.getElementById("forward").click();
-  }
-
-});
-
-showStatus("Ready");
-
+button.onclick=generate;
 </script>
-
 </body>
 </html>
