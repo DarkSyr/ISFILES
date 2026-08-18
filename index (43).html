@@ -74,10 +74,12 @@ button:hover{
   left:0;
   right:0;
   bottom:0;
-  overflow:hidden;
-  background:#fff
+  width:100%;
+  height:calc(100% - 58px);
+  border:0;
+  background:#fff;
 }
-
+  
 #home{
   position:absolute;
   inset:58px 0 0;
@@ -203,7 +205,11 @@ button:hover{
 
 </div>
 
-<div id="page"></div>
+<iframe
+  id="page"
+  allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+  referrerpolicy="no-referrer"
+></iframe>
 
 <div id="home">
 
@@ -465,7 +471,7 @@ async function registerUV(){
   try{
 
     await navigator.serviceWorker.register(
-      "/uv/uv.sw.js",
+      "https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv.sw.js",
       {
         scope:
           self.__uv$config.prefix
