@@ -214,7 +214,7 @@ button:hover{
 
 <h1>Web</h1>
 
-<p>Scramjet Web Proxy</p>
+<p>Single-file web viewer</p>
 
 <input
  id="homeinput"
@@ -249,66 +249,21 @@ button:hover{
 <script>
 "use strict";
 
-/*
-===========================================================
-CURRENT SCRAMJET DEMO
-===========================================================
-
-This is the official MercuryWorkshop Scramjet demo.
-
-It contains the Scramjet controller, service worker,
-transport, WASM and WISP configuration on its own origin.
-
-We do NOT attempt to call BareClient.fetch().
-===========================================================
-*/
-
-const SCRAMJET =
-  "https://scramjet.mercurywork.shop/";
-
-
-/* Elements */
-
-const page =
-  document.getElementById("page");
-
-const address =
-  document.getElementById("address");
-
-const home =
-  document.getElementById("home");
-
-const homeinput =
-  document.getElementById("homeinput");
-
-const loading =
-  document.getElementById("loading");
-
-const error =
-  document.getElementById("error");
-
-const errortext =
-  document.getElementById("errortext");
-
-const status =
-  document.getElementById("status");
-
-
-/* State */
+const page = document.getElementById("page");
+const address = document.getElementById("address");
+const home = document.getElementById("home");
+const homeinput = document.getElementById("homeinput");
+const loading = document.getElementById("loading");
+const error = document.getElementById("error");
+const errortext = document.getElementById("errortext");
+const status = document.getElementById("status");
 
 let currentURL = "";
-
 let historyList = [];
-
 let historyPosition = -1;
 
-
-/* Status */
-
 function showStatus(text){
-
   status.textContent = text;
-
   status.style.display = "block";
 
   clearTimeout(status.timer);
@@ -318,9 +273,6 @@ function showStatus(text){
   },1800);
 }
 
-
-/* Loading */
-
 function showLoading(){
   loading.style.display = "flex";
 }
@@ -329,16 +281,11 @@ function hideLoading(){
   loading.style.display = "none";
 }
 
-
-/* Normalize */
-
 function normalizeURL(value){
 
-  value =
-    String(value || "").trim();
+  value = String(value || "").trim();
 
-  if(!value)
-    return null;
+  if(!value) return null;
 
   if(
     value.startsWith("http://") ||
@@ -360,9 +307,6 @@ function normalizeURL(value){
   );
 }
 
-
-/* History */
-
 function addHistory(url){
 
   if(
@@ -372,11 +316,10 @@ function addHistory(url){
     return;
   }
 
-  historyList =
-    historyList.slice(
-      0,
-      historyPosition + 1
-    );
+  historyList = historyList.slice(
+    0,
+    historyPosition + 1
+  );
 
   historyList.push(url);
 
@@ -384,116 +327,84 @@ function addHistory(url){
     historyList.length - 1;
 }
 
+function showError(message){
 
-/*
-===========================================================
-OPEN SCRAMJET
-===========================================================
+  hideLoading();
 
-The hosted Scramjet application owns its service worker.
+  page.src = "about:blank";
 
-Because your page is only one HTML file, we cannot install
-Scramjet's service worker on your origin.
+  error.style.display = "flex";
 
-Instead this button opens the actual hosted Scramjet
-application in the iframe.
-===========================================================
-*/
-
-function openScramjet(url){
-
-  /*
-   * Scramjet's own application handles navigation.
-   *
-   * We open its homepage first.
-   */
-
-  page.src = SCRAMJET;
-
-  showStatus(
-    "Opening Scramjet..."
-  );
-
-  /*
-   * We cannot inject the target URL into the
-   * cross-origin application because browsers
-   * prohibit accessing its DOM.
-   *
-   * Therefore copy the requested URL so the user
-   * can enter it into the hosted proxy.
-   */
-
-  setTimeout(()=>{
-
-    hideLoading();
-
-    showStatus(
-      "Enter the URL in Scramjet"
-    );
-
-  },1500);
+  errortext.textContent = message;
 }
 
+function loadURL(value, record = true){
 
-/* Load */
+  const url = normalizeURL(value);
 
-function loadURL(
-  value,
-  record = true
-){
-
-  const url =
-    normalizeURL(value);
-
-  if(!url)
-    return;
+  if(!url) return;
 
   showLoading();
 
-  error.style.display =
-    "none";
+  error.style.display = "none";
 
   if(record){
     addHistory(url);
   }
 
-  currentURL =
-    url;
+  currentURL = url;
+  address.value = url;
 
-  address.value =
-    url;
-
-  home.style.display =
-    "none";
+  home.style.display = "none";
 
   try{
-
     document.title =
-      "Web — " +
-      new URL(url).hostname;
-
+      "Web — " + new URL(url).hostname;
   }catch{
-
     document.title = "Web";
-
   }
 
-  openScramjet(url);
-}
+  page.onload = ()=>{
+    hideLoading();
+    showStatus("Loaded");
+  };
 
+  page.onerror = ()=>{
+    showError(
+      "The browser refused to display this website.\n\n" +
+      "This single-file version does not use a proxy server. " +
+      "If the destination sends X-Frame-Options or CSP " +
+      "frame restrictions, Chrome prevents it from being " +
+      "displayed inside this iframe."
+    );
+  };
+
+  page.src = url;
+
+  /*
+   * iframe navigation errors are not always exposed
+   * to JavaScript, so prevent an infinite spinner.
+   */
+  setTimeout(()=>{
+    if(
+      currentURL === url &&
+      loading.style.display !== "none"
+    ){
+      hideLoading();
+
+      showStatus(
+        "The site may block iframe embedding"
+      );
+    }
+  },8000);
+}
 
 /* Back */
 
-document
-.getElementById("back")
-.onclick = ()=>{
+document.getElementById("back").onclick = ()=>{
 
   if(historyPosition <= 0){
-
-    showStatus(
-      "No previous page"
-    );
-
+    showStatus("No previous page");
     return;
   }
 
@@ -505,22 +416,15 @@ document
   );
 };
 
-
 /* Forward */
 
-document
-.getElementById("forward")
-.onclick = ()=>{
+document.getElementById("forward").onclick = ()=>{
 
   if(
     historyPosition >=
     historyList.length - 1
   ){
-
-    showStatus(
-      "No next page"
-    );
-
+    showStatus("No next page");
     return;
   }
 
@@ -532,149 +436,88 @@ document
   );
 };
 
-
 /* Reload */
 
-document
-.getElementById("reload")
-.onclick = ()=>{
+document.getElementById("reload").onclick = ()=>{
 
   if(!currentURL){
-
-    showStatus(
-      "Nothing to reload"
-    );
-
+    showStatus("Nothing to reload");
     return;
   }
 
-  loadURL(
-    currentURL,
-    false
-  );
-};
+  showLoading();
 
+  page.src = currentURL;
+};
 
 /* Go */
 
-document
-.getElementById("go")
-.onclick = ()=>{
-
-  loadURL(
-    address.value
-  );
+document.getElementById("go").onclick = ()=>{
+  loadURL(address.value);
 };
 
-
-address.addEventListener(
-  "keydown",
-  event=>{
-
-    if(event.key === "Enter"){
-
-      loadURL(
-        address.value
-      );
-
-    }
-
+address.addEventListener("keydown", e=>{
+  if(e.key === "Enter"){
+    loadURL(address.value);
   }
-);
-
+});
 
 /* Home */
 
-homeinput.addEventListener(
-  "keydown",
-  event=>{
-
-    if(event.key === "Enter"){
-
-      loadURL(
-        homeinput.value
-      );
-
-    }
-
+homeinput.addEventListener("keydown", e=>{
+  if(e.key === "Enter"){
+    loadURL(homeinput.value);
   }
-);
-
+});
 
 /* Retry */
 
-document
-.getElementById("retry")
-.onclick = ()=>{
+document.getElementById("retry").onclick = ()=>{
 
   if(currentURL){
-
-    loadURL(
-      currentURL,
-      false
-    );
-
+    loadURL(currentURL, false);
   }
 };
 
-
 /* Fullscreen */
 
-document
-.getElementById("fullscreen")
-.onclick = async()=>{
+document.getElementById("fullscreen").onclick = async()=>{
 
   try{
 
     if(!document.fullscreenElement){
 
-      await document
-        .documentElement
-        .requestFullscreen();
+      await document.documentElement.requestFullscreen();
 
     }else{
 
-      await document
-        .exitFullscreen();
+      await document.exitFullscreen();
 
     }
 
   }catch{
 
-    showStatus(
-      "Fullscreen unavailable"
-    );
+    showStatus("Fullscreen unavailable");
 
   }
-
 };
-
 
 /* Cloak */
 
-document
-.getElementById("cloak")
-.onclick = ()=>{
+document.getElementById("cloak").onclick = ()=>{
 
   document.title = "Google";
 
   let icon =
-    document.querySelector(
-      "link[rel='icon']"
-    );
+    document.querySelector("link[rel='icon']");
 
   if(!icon){
 
-    icon =
-      document.createElement(
-        "link"
-      );
+    icon = document.createElement("link");
 
     icon.rel = "icon";
 
-    document.head.appendChild(
-      icon
-    );
+    document.head.appendChild(icon);
   }
 
   icon.href =
@@ -700,57 +543,42 @@ document
   showStatus("Cloaked");
 };
 
-
 /* Keyboard */
 
-document.addEventListener(
-  "keydown",
-  event=>{
+document.addEventListener("keydown", e=>{
 
-    if(
-      event.ctrlKey &&
-      event.key.toLowerCase() === "l"
-    ){
+  if(
+    e.ctrlKey &&
+    e.key.toLowerCase() === "l"
+  ){
 
-      event.preventDefault();
+    e.preventDefault();
 
-      address.focus();
-
-      address.select();
-
-    }
-
-    if(
-      event.altKey &&
-      event.key === "ArrowLeft"
-    ){
-
-      event.preventDefault();
-
-      document
-        .getElementById("back")
-        .click();
-
-    }
-
-    if(
-      event.altKey &&
-      event.key === "ArrowRight"
-    ){
-
-      event.preventDefault();
-
-      document
-        .getElementById("forward")
-        .click();
-
-    }
-
+    address.focus();
+    address.select();
   }
-);
 
+  if(
+    e.altKey &&
+    e.key === "ArrowLeft"
+  ){
 
-/* Start */
+    e.preventDefault();
+
+    document.getElementById("back").click();
+  }
+
+  if(
+    e.altKey &&
+    e.key === "ArrowRight"
+  ){
+
+    e.preventDefault();
+
+    document.getElementById("forward").click();
+  }
+
+});
 
 showStatus("Ready");
 
