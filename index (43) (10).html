@@ -41,9 +41,7 @@ button{
   font-size:16px
 }
 
-button:hover{
-  background:#333
-}
+button:hover{background:#333}
 
 #address{
   flex:1;
@@ -86,9 +84,7 @@ button:hover{
   z-index:20
 }
 
-#homebox{
-  width:min(700px,90%)
-}
+#homebox{width:min(700px,90%)}
 
 #home h1{
   font-size:60px;
@@ -147,19 +143,17 @@ button:hover{
   padding:30px
 }
 
-#errorbox{
-  max-width:650px
-}
+#errorbox{max-width:650px}
 
-#error h2{
-  font-size:28px
-}
+#error h2{font-size:28px}
 
 #error p{
   color:#aaa;
   line-height:1.6;
   white-space:pre-wrap
 }
+
+#error button{margin-top:10px}
 
 #status{
   position:fixed;
@@ -210,7 +204,7 @@ button:hover{
 
 <h1>Web</h1>
 
-<p>Static Blob Web Viewer</p>
+<p>Ultraviolet Web Proxy</p>
 
 <input
  id="homeinput"
@@ -242,6 +236,11 @@ button:hover{
 
 <div id="status"></div>
 
+<!-- UV client files -->
+<script src="/uv/uv.bundle.js"></script>
+<script src="/uv/uv.config.js"></script>
+<script src="/uv/uv.handler.js"></script>
+
 <script>
 "use strict";
 
@@ -259,7 +258,6 @@ let historyList=[];
 let historyPosition=-1;
 
 function showStatus(text){
-
   status.textContent=text;
   status.style.display="block";
 
@@ -282,14 +280,7 @@ function normalizeURL(value){
 
   value=String(value||"").trim();
 
-  if(!value) return null;
-
-  if(
-    value.startsWith("blob:") ||
-    value.startsWith("data:")
-  ){
-    return value;
-  }
+  if(!value)return null;
 
   if(
     value.startsWith("http://") ||
@@ -332,18 +323,42 @@ function showError(message){
 
   hideLoading();
 
-  page.src="about:blank";
-
   error.style.display="flex";
 
   errortext.textContent=message;
 }
 
-function loadURL(value,record=true){
+async function registerUV(){
+
+  if(!("serviceWorker" in navigator)){
+    throw new Error(
+      "This browser does not support Service Workers."
+    );
+  }
+
+  /*
+   * UV's service worker must be hosted on the
+   * same origin as this HTML file.
+   */
+
+  const registration=
+    await navigator.serviceWorker.register(
+      "/uv/uv.sw.js",
+      {
+        scope:"/uv/service/"
+      }
+    );
+
+  await navigator.serviceWorker.ready;
+
+  return registration;
+}
+
+async function loadURL(value,record=true){
 
   const url=normalizeURL(value);
 
-  if(!url) return;
+  if(!url)return;
 
   showLoading();
 
@@ -354,20 +369,41 @@ function loadURL(value,record=true){
   }
 
   currentURL=url;
-
   address.value=url;
 
   home.style.display="none";
 
-  /*
-   * Blob/data URLs can be opened directly.
-   */
-  if(
-    url.startsWith("blob:") ||
-    url.startsWith("data:")
-  ){
+  try{
 
-    page.src=url;
+    const registration=
+      await registerUV();
+
+    if(!registration){
+      throw new Error(
+        "Ultraviolet service worker registration failed."
+      );
+    }
+
+    /*
+     * UV uses its configured prefix to construct
+     * the proxied URL.
+     */
+
+    const config=window.__uv$config;
+
+    if(!config){
+      throw new Error(
+        "uv.config.js did not create __uv$config."
+      );
+    }
+
+    const encoded=
+      config.encodeUrl(url);
+
+    const proxyURL=
+      location.origin+
+      config.prefix+
+      encoded;
 
     page.onload=()=>{
       hideLoading();
@@ -376,52 +412,32 @@ function loadURL(value,record=true){
 
     page.onerror=()=>{
       showError(
-        "The Blob/Data URL could not be loaded."
+        "Ultraviolet could not display the destination."
       );
     };
 
-    return;
-  }
+    page.src=proxyURL;
 
-  /*
-   * Normal websites are opened directly.
-   *
-   * This is NOT a proxy.
-   */
-  page.onload=()=>{
-    hideLoading();
-    showStatus("Loaded");
-  };
-
-  page.onerror=()=>{
-    showError(
-      "The destination could not be displayed in the iframe.\n\n"+
-      "The website may block iframe embedding with "+
-      "X-Frame-Options or Content-Security-Policy."
-    );
-  };
-
-  try{
     document.title=
-      "Web — "+new URL(url).hostname;
-  }catch{
-    document.title="Web";
+      "Web — "+
+      new URL(url).hostname;
+
+  }catch(e){
+
+    console.error(e);
+
+    showError(
+      "Ultraviolet could not be started.\n\n"+
+      e.message+
+      "\n\n"+
+      "Make sure these files exist on the same HTTPS host:\n"+
+      "/uv/uv.bundle.js\n"+
+      "/uv/uv.config.js\n"+
+      "/uv/uv.handler.js\n"+
+      "/uv/uv.sw.js\n\n"+
+      "A working Bare/transport server is also required."
+    );
   }
-
-  page.src=url;
-
-  /*
-   * Don't leave the loading overlay indefinitely
-   * on sites that block iframe embedding.
-   */
-  setTimeout(()=>{
-    if(
-      loading.style.display!=="none" &&
-      currentURL===url
-    ){
-      hideLoading();
-    }
-  },8000);
 }
 
 /* Back */
@@ -446,7 +462,8 @@ document.getElementById("back").onclick=()=>{
 document.getElementById("forward").onclick=()=>{
 
   if(
-    historyPosition>=historyList.length-1
+    historyPosition>=
+    historyList.length-1
   ){
     showStatus("No next page");
     return;
@@ -469,9 +486,7 @@ document.getElementById("reload").onclick=()=>{
     return;
   }
 
-  showLoading();
-
-  page.src=currentURL;
+  loadURL(currentURL,false);
 };
 
 /* Go */
@@ -480,25 +495,19 @@ document.getElementById("go").onclick=()=>{
   loadURL(address.value);
 };
 
-address.addEventListener(
-  "keydown",
-  e=>{
-    if(e.key==="Enter"){
-      loadURL(address.value);
-    }
+address.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    loadURL(address.value);
   }
-);
+});
 
 /* Home */
 
-homeinput.addEventListener(
-  "keydown",
-  e=>{
-    if(e.key==="Enter"){
-      loadURL(homeinput.value);
-    }
+homeinput.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    loadURL(homeinput.value);
   }
-);
+});
 
 /* Retry */
 
@@ -516,20 +525,13 @@ document.getElementById("fullscreen").onclick=async()=>{
   try{
 
     if(!document.fullscreenElement){
-
-      await document.documentElement
-        .requestFullscreen();
-
+      await document.documentElement.requestFullscreen();
     }else{
-
       await document.exitFullscreen();
-
     }
 
   }catch{
-
     showStatus("Fullscreen unavailable");
-
   }
 };
 
@@ -555,16 +557,20 @@ document.getElementById("cloak").onclick=()=>{
   icon.href=
     "data:image/svg+xml,"+
     encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg"
-           viewBox="0 0 64 64">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 64 64">
+
         <circle
           cx="32"
           cy="32"
           r="30"
           fill="white"/>
+
         <path
           d="M32 10a22 22 0 1 0 22 22H32z"
           fill="#4285f4"/>
+
       </svg>
     `);
 
@@ -573,48 +579,43 @@ document.getElementById("cloak").onclick=()=>{
 
 /* Keyboard */
 
-document.addEventListener(
-  "keydown",
-  e=>{
+document.addEventListener("keydown",e=>{
 
-    if(
-      e.ctrlKey &&
-      e.key.toLowerCase()==="l"
-    ){
+  if(
+    e.ctrlKey &&
+    e.key.toLowerCase()==="l"
+  ){
 
-      e.preventDefault();
+    e.preventDefault();
 
-      address.focus();
-      address.select();
-    }
-
-    if(
-      e.altKey &&
-      e.key==="ArrowLeft"
-    ){
-
-      e.preventDefault();
-
-      document
-        .getElementById("back")
-        .click();
-    }
-
-    if(
-      e.altKey &&
-      e.key==="ArrowRight"
-    ){
-
-      e.preventDefault();
-
-      document
-        .getElementById("forward")
-        .click();
-    }
+    address.focus();
+    address.select();
   }
-);
+
+  if(
+    e.altKey &&
+    e.key==="ArrowLeft"
+  ){
+
+    e.preventDefault();
+
+    document.getElementById("back").click();
+  }
+
+  if(
+    e.altKey &&
+    e.key==="ArrowRight"
+  ){
+
+    e.preventDefault();
+
+    document.getElementById("forward").click();
+  }
+
+});
 
 showStatus("Ready");
+
 </script>
 
 </body>
