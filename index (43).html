@@ -58,10 +58,6 @@ button:hover{
   font-size:14px
 }
 
-#address:focus{
-  border-color:#666
-}
-
 #go{
   background:#fff;
   color:#000;
@@ -75,7 +71,7 @@ button:hover{
   width:100%;
   height:calc(100% - 58px);
   border:0;
-  background:#fff;
+  background:#fff
 }
 
 #home{
@@ -231,7 +227,7 @@ button:hover{
 </div>
 
 <div id="loading">
-  <div class="spinner"></div>
+<div class="spinner"></div>
 </div>
 
 <div id="error">
@@ -254,33 +250,24 @@ button:hover{
 "use strict";
 
 /*
-============================================================
-HOSTED SCRAMJET
-============================================================
+===========================================================
+CURRENT SCRAMJET DEMO
+===========================================================
 
-This is the already-hosted Scramjet application.
+This is the official MercuryWorkshop Scramjet demo.
 
-The hosted application contains the actual:
-- Scramjet engine
-- service worker
-- WASM
-- bare-mux
-- transport
-- WISP configuration
+It contains the Scramjet controller, service worker,
+transport, WASM and WISP configuration on its own origin.
 
-Your single HTML does NOT attempt to recreate those files.
-============================================================
+We do NOT attempt to call BareClient.fetch().
+===========================================================
 */
 
-const SCRAMJET_APP =
-  "https://hahahah67-pixel.github.io/scramjet-static/";
+const SCRAMJET =
+  "https://scramjet.mercurywork.shop/";
 
 
-/*
-============================================================
-ELEMENTS
-============================================================
-*/
+/* Elements */
 
 const page =
   document.getElementById("page");
@@ -307,11 +294,7 @@ const status =
   document.getElementById("status");
 
 
-/*
-============================================================
-STATE
-============================================================
-*/
+/* State */
 
 let currentURL = "";
 
@@ -320,11 +303,7 @@ let historyList = [];
 let historyPosition = -1;
 
 
-/*
-============================================================
-STATUS
-============================================================
-*/
+/* Status */
 
 function showStatus(text){
 
@@ -337,34 +316,21 @@ function showStatus(text){
   status.timer = setTimeout(()=>{
     status.style.display = "none";
   },1800);
-
 }
 
 
-/*
-============================================================
-LOADING
-============================================================
-*/
+/* Loading */
 
 function showLoading(){
-
   loading.style.display = "flex";
-
 }
 
 function hideLoading(){
-
   loading.style.display = "none";
-
 }
 
 
-/*
-============================================================
-NORMALIZE URL
-============================================================
-*/
+/* Normalize */
 
 function normalizeURL(value){
 
@@ -374,52 +340,28 @@ function normalizeURL(value){
   if(!value)
     return null;
 
-
-  /*
-   * Already a URL.
-   */
-
   if(
     value.startsWith("http://") ||
     value.startsWith("https://")
   ){
-
     return value;
-
   }
-
-
-  /*
-   * Domain entered without protocol.
-   */
 
   if(
     !value.includes(" ") &&
     value.includes(".")
   ){
-
     return "https://" + value;
-
   }
-
-
-  /*
-   * Search query.
-   */
 
   return (
     "https://www.google.com/search?q=" +
     encodeURIComponent(value)
   );
-
 }
 
 
-/*
-============================================================
-HISTORY
-============================================================
-*/
+/* History */
 
 function addHistory(url){
 
@@ -427,11 +369,8 @@ function addHistory(url){
     historyPosition >= 0 &&
     historyList[historyPosition] === url
   ){
-
     return;
-
   }
-
 
   historyList =
     historyList.slice(
@@ -439,64 +378,64 @@ function addHistory(url){
       historyPosition + 1
     );
 
-
   historyList.push(url);
 
   historyPosition =
     historyList.length - 1;
-
 }
 
 
 /*
-============================================================
-ERROR
-============================================================
+===========================================================
+OPEN SCRAMJET
+===========================================================
+
+The hosted Scramjet application owns its service worker.
+
+Because your page is only one HTML file, we cannot install
+Scramjet's service worker on your origin.
+
+Instead this button opens the actual hosted Scramjet
+application in the iframe.
+===========================================================
 */
 
-function showError(message){
-
-  hideLoading();
-
-  page.src = "about:blank";
-
-  error.style.display = "flex";
-
-  errortext.textContent =
-    message;
-
-}
-
-
-/*
-============================================================
-OPEN HOSTED SCRAMJET
-============================================================
-*/
-
-function buildScramjetURL(target){
+function openScramjet(url){
 
   /*
-   * The hosted Scramjet application handles
-   * its own URL encoding and service worker.
+   * Scramjet's own application handles navigation.
    *
-   * We pass the destination as a URL parameter.
+   * We open its homepage first.
    */
 
-  return (
-    SCRAMJET_APP +
-    "?url=" +
-    encodeURIComponent(target)
+  page.src = SCRAMJET;
+
+  showStatus(
+    "Opening Scramjet..."
   );
 
+  /*
+   * We cannot inject the target URL into the
+   * cross-origin application because browsers
+   * prohibit accessing its DOM.
+   *
+   * Therefore copy the requested URL so the user
+   * can enter it into the hosted proxy.
+   */
+
+  setTimeout(()=>{
+
+    hideLoading();
+
+    showStatus(
+      "Enter the URL in Scramjet"
+    );
+
+  },1500);
 }
 
 
-/*
-============================================================
-LOAD URL
-============================================================
-*/
+/* Load */
 
 function loadURL(
   value,
@@ -509,19 +448,14 @@ function loadURL(
   if(!url)
     return;
 
-
   showLoading();
 
   error.style.display =
     "none";
 
-
   if(record){
-
     addHistory(url);
-
   }
-
 
   currentURL =
     url;
@@ -529,10 +463,8 @@ function loadURL(
   address.value =
     url;
 
-
   home.style.display =
     "none";
-
 
   try{
 
@@ -542,181 +474,97 @@ function loadURL(
 
   }catch{
 
-    document.title =
-      "Web";
+    document.title = "Web";
 
   }
 
-
-  showStatus(
-    "Opening Scramjet..."
-  );
-
-
-  /*
-   * Open the already-hosted Scramjet
-   * application.
-   */
-
-  page.src =
-    buildScramjetURL(url);
-
-
-  page.onload = ()=>{
-
-    hideLoading();
-
-    showStatus(
-      "Scramjet loaded"
-    );
-
-  };
-
-
-  page.onerror = ()=>{
-
-    showError(
-      "The hosted Scramjet application could not be loaded."
-    );
-
-  };
-
-
-  /*
-   * Don't leave spinner forever.
-   */
-
-  setTimeout(()=>{
-
-    if(
-      loading.style.display !== "none" &&
-      currentURL === url
-    ){
-
-      hideLoading();
-
-    }
-
-  },10000);
-
+  openScramjet(url);
 }
 
 
-/*
-============================================================
-BACK
-============================================================
-*/
+/* Back */
 
 document
-  .getElementById("back")
-  .onclick = ()=>{
+.getElementById("back")
+.onclick = ()=>{
 
-    if(historyPosition <= 0){
+  if(historyPosition <= 0){
 
-      showStatus(
-        "No previous page"
-      );
-
-      return;
-
-    }
-
-
-    historyPosition--;
-
-
-    loadURL(
-      historyList[
-        historyPosition
-      ],
-      false
+    showStatus(
+      "No previous page"
     );
 
-  };
+    return;
+  }
+
+  historyPosition--;
+
+  loadURL(
+    historyList[historyPosition],
+    false
+  );
+};
 
 
-/*
-============================================================
-FORWARD
-============================================================
-*/
+/* Forward */
 
 document
-  .getElementById("forward")
-  .onclick = ()=>{
+.getElementById("forward")
+.onclick = ()=>{
 
-    if(
-      historyPosition >=
-      historyList.length - 1
-    ){
+  if(
+    historyPosition >=
+    historyList.length - 1
+  ){
 
-      showStatus(
-        "No next page"
-      );
-
-      return;
-
-    }
-
-
-    historyPosition++;
-
-
-    loadURL(
-      historyList[
-        historyPosition
-      ],
-      false
+    showStatus(
+      "No next page"
     );
 
-  };
+    return;
+  }
+
+  historyPosition++;
+
+  loadURL(
+    historyList[historyPosition],
+    false
+  );
+};
 
 
-/*
-============================================================
-RELOAD
-============================================================
-*/
+/* Reload */
 
 document
-  .getElementById("reload")
-  .onclick = ()=>{
+.getElementById("reload")
+.onclick = ()=>{
 
-    if(!currentURL){
+  if(!currentURL){
 
-      showStatus(
-        "Nothing to reload"
-      );
-
-      return;
-
-    }
-
-
-    loadURL(
-      currentURL,
-      false
+    showStatus(
+      "Nothing to reload"
     );
 
-  };
+    return;
+  }
+
+  loadURL(
+    currentURL,
+    false
+  );
+};
 
 
-/*
-============================================================
-GO
-============================================================
-*/
+/* Go */
 
 document
-  .getElementById("go")
-  .onclick = ()=>{
+.getElementById("go")
+.onclick = ()=>{
 
-    loadURL(
-      address.value
-    );
-
-  };
+  loadURL(
+    address.value
+  );
+};
 
 
 address.addEventListener(
@@ -735,11 +583,7 @@ address.addEventListener(
 );
 
 
-/*
-============================================================
-HOME
-============================================================
-*/
+/* Home */
 
 homeinput.addEventListener(
   "keydown",
@@ -757,133 +601,107 @@ homeinput.addEventListener(
 );
 
 
-/*
-============================================================
-RETRY
-============================================================
-*/
+/* Retry */
 
 document
-  .getElementById("retry")
-  .onclick = ()=>{
+.getElementById("retry")
+.onclick = ()=>{
 
-    if(currentURL){
+  if(currentURL){
 
-      loadURL(
-        currentURL,
-        false
-      );
-
-    }
-
-  };
-
-
-/*
-============================================================
-FULLSCREEN
-============================================================
-*/
-
-document
-  .getElementById("fullscreen")
-  .onclick = async()=>{
-
-    try{
-
-      if(!document.fullscreenElement){
-
-        await document
-          .documentElement
-          .requestFullscreen();
-
-      }else{
-
-        await document.exitFullscreen();
-
-      }
-
-    }catch{
-
-      showStatus(
-        "Fullscreen unavailable"
-      );
-
-    }
-
-  };
-
-
-/*
-============================================================
-CLOAK
-============================================================
-*/
-
-document
-  .getElementById("cloak")
-  .onclick = ()=>{
-
-    document.title =
-      "Google";
-
-
-    let icon =
-      document.querySelector(
-        "link[rel='icon']"
-      );
-
-
-    if(!icon){
-
-      icon =
-        document.createElement(
-          "link"
-        );
-
-      icon.rel =
-        "icon";
-
-      document.head.appendChild(
-        icon
-      );
-
-    }
-
-
-    icon.href =
-      "data:image/svg+xml," +
-      encodeURIComponent(`
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 64 64">
-
-          <circle
-            cx="32"
-            cy="32"
-            r="30"
-            fill="white"/>
-
-          <path
-            d="M32 10a22 22 0 1 0 22 22H32z"
-            fill="#4285f4"/>
-
-        </svg>
-      `);
-
-
-    showStatus(
-      "Cloaked"
+    loadURL(
+      currentURL,
+      false
     );
 
-  };
+  }
+};
 
 
-/*
-============================================================
-KEYBOARD
-============================================================
-*/
+/* Fullscreen */
+
+document
+.getElementById("fullscreen")
+.onclick = async()=>{
+
+  try{
+
+    if(!document.fullscreenElement){
+
+      await document
+        .documentElement
+        .requestFullscreen();
+
+    }else{
+
+      await document
+        .exitFullscreen();
+
+    }
+
+  }catch{
+
+    showStatus(
+      "Fullscreen unavailable"
+    );
+
+  }
+
+};
+
+
+/* Cloak */
+
+document
+.getElementById("cloak")
+.onclick = ()=>{
+
+  document.title = "Google";
+
+  let icon =
+    document.querySelector(
+      "link[rel='icon']"
+    );
+
+  if(!icon){
+
+    icon =
+      document.createElement(
+        "link"
+      );
+
+    icon.rel = "icon";
+
+    document.head.appendChild(
+      icon
+    );
+  }
+
+  icon.href =
+    "data:image/svg+xml," +
+    encodeURIComponent(`
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 64 64">
+
+        <circle
+          cx="32"
+          cy="32"
+          r="30"
+          fill="white"/>
+
+        <path
+          d="M32 10a22 22 0 1 0 22 22H32z"
+          fill="#4285f4"/>
+
+      </svg>
+    `);
+
+  showStatus("Cloaked");
+};
+
+
+/* Keyboard */
 
 document.addEventListener(
   "keydown",
@@ -902,7 +720,6 @@ document.addEventListener(
 
     }
 
-
     if(
       event.altKey &&
       event.key === "ArrowLeft"
@@ -915,7 +732,6 @@ document.addEventListener(
         .click();
 
     }
-
 
     if(
       event.altKey &&
@@ -934,15 +750,9 @@ document.addEventListener(
 );
 
 
-/*
-============================================================
-START
-============================================================
-*/
+/* Start */
 
-showStatus(
-  "Ready"
-);
+showStatus("Ready");
 
 </script>
 
