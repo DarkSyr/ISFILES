@@ -76,7 +76,6 @@ button:hover{
   height:calc(100% - 58px);
   border:0;
   background:#fff;
-  z-index:1
 }
 
 #home{
@@ -153,7 +152,7 @@ button:hover{
 }
 
 #errorbox{
-  max-width:700px
+  max-width:650px
 }
 
 #error h2{
@@ -164,6 +163,10 @@ button:hover{
   color:#aaa;
   line-height:1.6;
   white-space:pre-wrap
+}
+
+#error button{
+  margin-top:10px
 }
 
 #status{
@@ -228,7 +231,7 @@ button:hover{
 </div>
 
 <div id="loading">
-<div class="spinner"></div>
+  <div class="spinner"></div>
 </div>
 
 <div id="error">
@@ -247,49 +250,37 @@ button:hover{
 
 <div id="status"></div>
 
-
-<!--
-===========================================================
-CURRENT SCRAMJET ARCHITECTURE
-===========================================================
-
-This uses:
-
-Scramjet Controller
-       ↓
-proxy-transports
-       ↓
-libcurl-transport
-       ↓
-WISP
-       ↓
-Internet
-
-IMPORTANT:
-
-The following files must be available from THIS origin:
-
-/sw.js
-/scramjet/scramjet.all.js
-/scramjet/scramjet.wasm
-
-The service worker cannot simply be loaded from another
-origin such as raw.githubusercontent.com.
-===========================================================
--->
-
-<script src="https://unpkg.com/@mercuryworkshop/libcurl-transport@2/dist/index.js"></script>
-
-<script src="https://unpkg.com/@mercuryworkshop/scramjet@latest/dist/scramjet.all.js"></script>
-
-<script src="https://unpkg.com/@mercuryworkshop/scramjet-controller@latest/dist/index.js"></script>
-
 <script>
 "use strict";
 
-/* =========================================================
-   ELEMENTS
-========================================================= */
+/*
+============================================================
+HOSTED SCRAMJET
+============================================================
+
+This is the already-hosted Scramjet application.
+
+The hosted application contains the actual:
+- Scramjet engine
+- service worker
+- WASM
+- bare-mux
+- transport
+- WISP configuration
+
+Your single HTML does NOT attempt to recreate those files.
+============================================================
+*/
+
+const SCRAMJET_APP =
+  "https://hahahah67-pixel.github.io/scramjet-static/";
+
+
+/*
+============================================================
+ELEMENTS
+============================================================
+*/
 
 const page =
   document.getElementById("page");
@@ -316,35 +307,11 @@ const status =
   document.getElementById("status");
 
 
-/* =========================================================
-   CONFIGURATION
-========================================================= */
-
 /*
- * Current public WISP endpoint used by public static
- * Scramjet deployments.
- *
- * You can replace this later with your own WISP server.
- */
-
-const WISP_SERVER =
-  "wss://anura.pro/wisp/";
-
-
-/*
- * Scramjet files on THIS origin.
- */
-
-const SCRAMJET_PATH =
-  "/scramjet/";
-
-const SERVICE_WORKER =
-  "/sw.js";
-
-
-/* =========================================================
-   STATE
-========================================================= */
+============================================================
+STATE
+============================================================
+*/
 
 let currentURL = "";
 
@@ -352,100 +319,65 @@ let historyList = [];
 
 let historyPosition = -1;
 
-let controller = null;
 
-let frame = null;
-
-let initialized = false;
-
-
-/* =========================================================
-   STATUS
-========================================================= */
+/*
+============================================================
+STATUS
+============================================================
+*/
 
 function showStatus(text){
 
-  status.textContent =
-    text;
+  status.textContent = text;
 
-  status.style.display =
-    "block";
+  status.style.display = "block";
 
-  clearTimeout(
-    status.timer
-  );
+  clearTimeout(status.timer);
 
-  status.timer =
-    setTimeout(
-      ()=>{
-        status.style.display =
-          "none";
-      },
-      2500
-    );
+  status.timer = setTimeout(()=>{
+    status.style.display = "none";
+  },1800);
 
 }
 
 
-/* =========================================================
-   LOADING
-========================================================= */
+/*
+============================================================
+LOADING
+============================================================
+*/
 
 function showLoading(){
 
-  loading.style.display =
-    "flex";
+  loading.style.display = "flex";
 
 }
 
 function hideLoading(){
 
-  loading.style.display =
-    "none";
+  loading.style.display = "none";
 
 }
 
 
-/* =========================================================
-   ERROR
-========================================================= */
-
-function showError(message){
-
-  hideLoading();
-
-  error.style.display =
-    "flex";
-
-  errortext.textContent =
-    message;
-
-}
-
-
-/* =========================================================
-   URL NORMALIZATION
-========================================================= */
+/*
+============================================================
+NORMALIZE URL
+============================================================
+*/
 
 function normalizeURL(value){
 
   value =
-    String(value || "")
-      .trim();
+    String(value || "").trim();
 
   if(!value)
     return null;
 
 
-  if(
-    value.startsWith("blob:") ||
-    value.startsWith("data:")
-  ){
-
-    return value;
-
-  }
-
+  /*
+   * Already a URL.
+   */
 
   if(
     value.startsWith("http://") ||
@@ -457,18 +389,23 @@ function normalizeURL(value){
   }
 
 
+  /*
+   * Domain entered without protocol.
+   */
+
   if(
     !value.includes(" ") &&
     value.includes(".")
   ){
 
-    return (
-      "https://" +
-      value
-    );
+    return "https://" + value;
 
   }
 
+
+  /*
+   * Search query.
+   */
 
   return (
     "https://www.google.com/search?q=" +
@@ -478,17 +415,17 @@ function normalizeURL(value){
 }
 
 
-/* =========================================================
-   HISTORY
-========================================================= */
+/*
+============================================================
+HISTORY
+============================================================
+*/
 
 function addHistory(url){
 
   if(
     historyPosition >= 0 &&
-    historyList[
-      historyPosition
-    ] === url
+    historyList[historyPosition] === url
   ){
 
     return;
@@ -503,10 +440,7 @@ function addHistory(url){
     );
 
 
-  historyList.push(
-    url
-  );
-
+  historyList.push(url);
 
   historyPosition =
     historyList.length - 1;
@@ -514,252 +448,63 @@ function addHistory(url){
 }
 
 
-/* =========================================================
-   INITIALIZE SERVICE WORKER
-========================================================= */
+/*
+============================================================
+ERROR
+============================================================
+*/
 
-async function registerServiceWorker(){
+function showError(message){
 
-  if(
-    !("serviceWorker" in navigator)
-  ){
+  hideLoading();
 
-    throw new Error(
-      "This browser does not support Service Workers."
-    );
+  page.src = "about:blank";
 
-  }
+  error.style.display = "flex";
 
-
-  /*
-   * Scramjet needs the worker on the same origin.
-   */
-
-  const registration =
-    await navigator.serviceWorker.register(
-      SERVICE_WORKER,
-      {
-        scope: "/"
-      }
-    );
-
-
-  await navigator.serviceWorker.ready;
-
-
-  /*
-   * Make sure this page is controlled.
-   */
-
-  if(
-    !navigator.serviceWorker.controller
-  ){
-
-    showStatus(
-      "Activating Scramjet worker..."
-    );
-
-
-    await new Promise(
-      resolve =>
-        navigator.serviceWorker.addEventListener(
-          "controllerchange",
-          resolve,
-          {
-            once:true
-          }
-        )
-    );
-
-  }
-
-
-  return registration;
+  errortext.textContent =
+    message;
 
 }
 
 
-/* =========================================================
-   INITIALIZE SCRAMJET
-========================================================= */
+/*
+============================================================
+OPEN HOSTED SCRAMJET
+============================================================
+*/
 
-async function initializeScramjet(){
-
-  if(initialized)
-    return;
-
-
-  showStatus(
-    "Starting Scramjet..."
-  );
-
-
-  await registerServiceWorker();
-
+function buildScramjetURL(target){
 
   /*
-   * Check the current transport library.
+   * The hosted Scramjet application handles
+   * its own URL encoding and service worker.
+   *
+   * We pass the destination as a URL parameter.
    */
 
-  if(
-    typeof LibcurlTransport ===
-    "undefined"
-  ){
-
-    throw new Error(
-      "libcurl-transport failed to load."
-    );
-
-  }
-
-
-  /*
-   * Check Scramjet controller.
-   */
-
-  if(
-    typeof ScramjetController ===
-    "undefined"
-  ){
-
-    throw new Error(
-      "Scramjet Controller failed to load."
-    );
-
-  }
-
-
-  /*
-   * Create libcurl transport.
-   */
-
-  const transport =
-    new LibcurlTransport.LibcurlClient(
-      {
-        websocket:
-          WISP_SERVER
-      }
-    );
-
-
-  /*
-   * Create the Scramjet controller.
-   */
-
-  controller =
-    new ScramjetController.Controller(
-      {
-        serviceworker:
-          navigator.serviceWorker.controller,
-
-        transport:
-
-          transport,
-
-        config:{
-          prefix:
-            "/scramjet/"
-        }
-      }
-    );
-
-
-  await controller.wait();
-
-
-  /*
-   * Attach Scramjet to our iframe.
-   */
-
-  frame =
-    controller.createFrame(
-      page
-    );
-
-
-  initialized =
-    true;
-
-
-  showStatus(
-    "Scramjet ready"
+  return (
+    SCRAMJET_APP +
+    "?url=" +
+    encodeURIComponent(target)
   );
 
 }
 
 
-/* =========================================================
-   NAVIGATION
-========================================================= */
+/*
+============================================================
+LOAD URL
+============================================================
+*/
 
-async function navigate(url){
-
-  if(!initialized){
-
-    await initializeScramjet();
-
-  }
-
-
-  /*
-   * Scramjet's frame navigation handles
-   * encoding and interception.
-   */
-
-  if(
-    frame &&
-    typeof frame.go === "function"
-  ){
-
-    await frame.go(
-      url
-    );
-
-    return;
-
-  }
-
-
-  /*
-   * Fallback for versions where the frame
-   * exposes navigate().
-   */
-
-  if(
-    frame &&
-    typeof frame.navigate === "function"
-  ){
-
-    await frame.navigate(
-      url
-    );
-
-    return;
-
-  }
-
-
-  throw new Error(
-    "The installed Scramjet controller does not expose a navigation method."
-  );
-
-}
-
-
-/* =========================================================
-   LOAD URL
-========================================================= */
-
-async function loadURL(
+function loadURL(
   value,
-  record=true
+  record = true
 ){
 
   const url =
-    normalizeURL(
-      value
-    );
-
+    normalizeURL(value);
 
   if(!url)
     return;
@@ -773,9 +518,7 @@ async function loadURL(
 
   if(record){
 
-    addHistory(
-      url
-    );
+    addHistory(url);
 
   }
 
@@ -786,105 +529,90 @@ async function loadURL(
   address.value =
     url;
 
+
   home.style.display =
     "none";
 
 
   try{
 
-    if(
-      url.startsWith("blob:") ||
-      url.startsWith("data:")
-    ){
+    document.title =
+      "Web — " +
+      new URL(url).hostname;
 
-      page.src =
-        url;
+  }catch{
 
-      page.onload =
-        ()=>{
-          hideLoading();
-          showStatus("Loaded");
-        };
-
-      return;
-
-    }
-
-
-    try{
-
-      document.title =
-        "Web — " +
-        new URL(
-          url
-        ).hostname;
-
-    }catch{
-
-      document.title =
-        "Web";
-
-    }
-
-
-    showStatus(
-      "Loading through Scramjet..."
-    );
-
-
-    await navigate(
-      url
-    );
-
-
-    /*
-     * The service worker now handles
-     * the requests from the Scramjet frame.
-     */
-
-    setTimeout(
-      ()=>{
-        hideLoading();
-        showStatus(
-          "Loaded"
-        );
-      },
-      700
-    );
-
-
-  }catch(e){
-
-    console.error(
-      "Scramjet:",
-      e
-    );
-
-
-    showError(
-      "The site could not be loaded through Scramjet.\n\n" +
-      e.message +
-      "\n\n" +
-      "Check that sw.js and the Scramjet runtime are hosted on this same origin."
-    );
+    document.title =
+      "Web";
 
   }
+
+
+  showStatus(
+    "Opening Scramjet..."
+  );
+
+
+  /*
+   * Open the already-hosted Scramjet
+   * application.
+   */
+
+  page.src =
+    buildScramjetURL(url);
+
+
+  page.onload = ()=>{
+
+    hideLoading();
+
+    showStatus(
+      "Scramjet loaded"
+    );
+
+  };
+
+
+  page.onerror = ()=>{
+
+    showError(
+      "The hosted Scramjet application could not be loaded."
+    );
+
+  };
+
+
+  /*
+   * Don't leave spinner forever.
+   */
+
+  setTimeout(()=>{
+
+    if(
+      loading.style.display !== "none" &&
+      currentURL === url
+    ){
+
+      hideLoading();
+
+    }
+
+  },10000);
 
 }
 
 
-/* =========================================================
-   BACK
-========================================================= */
+/*
+============================================================
+BACK
+============================================================
+*/
 
 document
   .getElementById("back")
-  .onclick =
-  async()=>{
+  .onclick = ()=>{
 
-    if(
-      historyPosition <= 0
-    ){
+    if(historyPosition <= 0){
 
       showStatus(
         "No previous page"
@@ -898,32 +626,25 @@ document
     historyPosition--;
 
 
-    try{
-
-      await loadURL(
-        historyList[
-          historyPosition
-        ],
-        false
-      );
-
-    }catch(e){
-
-      console.error(e);
-
-    }
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
 
   };
 
 
-/* =========================================================
-   FORWARD
-========================================================= */
+/*
+============================================================
+FORWARD
+============================================================
+*/
 
 document
   .getElementById("forward")
-  .onclick =
-  async()=>{
+  .onclick = ()=>{
 
     if(
       historyPosition >=
@@ -942,32 +663,25 @@ document
     historyPosition++;
 
 
-    try{
-
-      await loadURL(
-        historyList[
-          historyPosition
-        ],
-        false
-      );
-
-    }catch(e){
-
-      console.error(e);
-
-    }
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
 
   };
 
 
-/* =========================================================
-   RELOAD
-========================================================= */
+/*
+============================================================
+RELOAD
+============================================================
+*/
 
 document
   .getElementById("reload")
-  .onclick =
-  async()=>{
+  .onclick = ()=>{
 
     if(!currentURL){
 
@@ -980,7 +694,7 @@ document
     }
 
 
-    await loadURL(
+    loadURL(
       currentURL,
       false
     );
@@ -988,14 +702,15 @@ document
   };
 
 
-/* =========================================================
-   GO
-========================================================= */
+/*
+============================================================
+GO
+============================================================
+*/
 
 document
   .getElementById("go")
-  .onclick =
-  ()=>{
+  .onclick = ()=>{
 
     loadURL(
       address.value
@@ -1006,11 +721,9 @@ document
 
 address.addEventListener(
   "keydown",
-  e=>{
+  event=>{
 
-    if(
-      e.key === "Enter"
-    ){
+    if(event.key === "Enter"){
 
       loadURL(
         address.value
@@ -1022,17 +735,17 @@ address.addEventListener(
 );
 
 
-/* =========================================================
-   HOME
-========================================================= */
+/*
+============================================================
+HOME
+============================================================
+*/
 
 homeinput.addEventListener(
   "keydown",
-  e=>{
+  event=>{
 
-    if(
-      e.key === "Enter"
-    ){
+    if(event.key === "Enter"){
 
       loadURL(
         homeinput.value
@@ -1044,14 +757,15 @@ homeinput.addEventListener(
 );
 
 
-/* =========================================================
-   RETRY
-========================================================= */
+/*
+============================================================
+RETRY
+============================================================
+*/
 
 document
   .getElementById("retry")
-  .onclick =
-  ()=>{
+  .onclick = ()=>{
 
     if(currentURL){
 
@@ -1065,20 +779,19 @@ document
   };
 
 
-/* =========================================================
-   FULLSCREEN
-========================================================= */
+/*
+============================================================
+FULLSCREEN
+============================================================
+*/
 
 document
   .getElementById("fullscreen")
-  .onclick =
-  async()=>{
+  .onclick = async()=>{
 
     try{
 
-      if(
-        !document.fullscreenElement
-      ){
+      if(!document.fullscreenElement){
 
         await document
           .documentElement
@@ -1086,8 +799,7 @@ document
 
       }else{
 
-        await document
-          .exitFullscreen();
+        await document.exitFullscreen();
 
       }
 
@@ -1102,14 +814,15 @@ document
   };
 
 
-/* =========================================================
-   CLOAK
-========================================================= */
+/*
+============================================================
+CLOAK
+============================================================
+*/
 
 document
   .getElementById("cloak")
-  .onclick =
-  ()=>{
+  .onclick = ()=>{
 
     document.title =
       "Google";
@@ -1166,20 +879,22 @@ document
   };
 
 
-/* =========================================================
-   KEYBOARD
-========================================================= */
+/*
+============================================================
+KEYBOARD
+============================================================
+*/
 
 document.addEventListener(
   "keydown",
-  e=>{
+  event=>{
 
     if(
-      e.ctrlKey &&
-      e.key.toLowerCase() === "l"
+      event.ctrlKey &&
+      event.key.toLowerCase() === "l"
     ){
 
-      e.preventDefault();
+      event.preventDefault();
 
       address.focus();
 
@@ -1189,11 +904,11 @@ document.addEventListener(
 
 
     if(
-      e.altKey &&
-      e.key === "ArrowLeft"
+      event.altKey &&
+      event.key === "ArrowLeft"
     ){
 
-      e.preventDefault();
+      event.preventDefault();
 
       document
         .getElementById("back")
@@ -1203,11 +918,11 @@ document.addEventListener(
 
 
     if(
-      e.altKey &&
-      e.key === "ArrowRight"
+      event.altKey &&
+      event.key === "ArrowRight"
     ){
 
-      e.preventDefault();
+      event.preventDefault();
 
       document
         .getElementById("forward")
@@ -1219,37 +934,15 @@ document.addEventListener(
 );
 
 
-/* =========================================================
-   STARTUP
-========================================================= */
+/*
+============================================================
+START
+============================================================
+*/
 
-(async()=>{
-
-  try{
-
-    await initializeScramjet();
-
-    showStatus(
-      "Scramjet ready"
-    );
-
-  }catch(e){
-
-    console.error(
-      e
-    );
-
-
-    showError(
-      "Scramjet could not start.\n\n" +
-      e.message +
-      "\n\n" +
-      "You must host the Scramjet service worker and runtime files on the same origin as this HTML."
-    );
-
-  }
-
-})();
+showStatus(
+  "Ready"
+);
 
 </script>
 
