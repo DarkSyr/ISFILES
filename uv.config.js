@@ -7,8 +7,7 @@ self.__uv$config = {
    * You do NOT need to run Bare yourself if you use a public one.
    */
   bare: [
-    "https://incog.dev/bare/",
-    "https://tomp.app/",
+    "https://uv.holyubofficial.net/"
   ],
   encodeUrl: Ultraviolet.codec.xor.encode,
   decodeUrl: Ultraviolet.codec.xor.decode,
