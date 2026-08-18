@@ -3,13 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<title>Web Proxy</title>
+<title>Web</title>
 
 <style>
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box}
 
 html,body{
   margin:0;
@@ -18,7 +15,19 @@ html,body{
   overflow:hidden;
   background:#080808;
   color:#fff;
-  font-family:Arial,Helvetica,sans-serif;
+  font-family:Arial,sans-serif
+}
+
+#bar{
+  height:58px;
+  background:#111;
+  border-bottom:1px solid #292929;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:8px;
+  position:relative;
+  z-index:1000
 }
 
 button{
@@ -29,33 +38,11 @@ button{
   background:#222;
   color:#fff;
   cursor:pointer;
-  font-size:16px;
-  transition:.15s;
+  font-size:16px
 }
 
 button:hover{
-  background:#333;
-}
-
-button:active{
-  transform:scale(.96);
-}
-
-/* TOP BAR */
-
-#bar{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  height:58px;
-  background:#111;
-  border-bottom:1px solid #292929;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  padding:8px;
-  z-index:10000;
+  background:#333
 }
 
 #address{
@@ -68,115 +55,91 @@ button:active{
   background:#191919;
   color:#fff;
   padding:0 13px;
-  font-size:14px;
+  font-size:14px
 }
 
 #address:focus{
-  border-color:#777;
+  border-color:#666
 }
 
 #go{
   background:#fff;
   color:#000;
-  font-weight:bold;
+  font-weight:bold
 }
-
-/* PAGE */
 
 #page{
-  position:fixed;
+  position:absolute;
   top:58px;
   left:0;
   right:0;
   bottom:0;
-  overflow:auto;
-  background:#fff;
-  color:#000;
-  z-index:1;
+  overflow:hidden;
+  background:#fff
 }
 
-/* HOME */
-
 #home{
-  position:fixed;
-  top:58px;
-  left:0;
-  right:0;
-  bottom:0;
+  position:absolute;
+  inset:58px 0 0;
   background:
-    radial-gradient(
-      circle at center,
-      #242424 0,
-      #111 42%,
-      #070707 75%
-    );
+    radial-gradient(circle at center,#202020,#080808 65%);
   display:flex;
   justify-content:center;
   align-items:center;
   text-align:center;
-  z-index:100;
+  z-index:20
 }
 
 #homebox{
-  width:min(760px,90%);
+  width:min(700px,90%)
 }
 
 #home h1{
-  margin:0;
-  font-size:70px;
-  letter-spacing:-4px;
+  font-size:60px;
+  margin:0 0 10px
 }
 
 #home p{
   color:#999;
-  margin:8px 0 28px;
+  margin-bottom:25px
 }
 
 #homeinput{
   width:100%;
-  height:54px;
-  border-radius:11px;
-  border:1px solid #383838;
+  height:52px;
+  border-radius:10px;
+  border:1px solid #333;
   background:#151515;
   color:#fff;
-  outline:none;
-  padding:0 17px;
+  padding:0 15px;
   font-size:15px;
+  outline:none
 }
-
-#homeinput:focus{
-  border-color:#777;
-}
-
-/* LOADING */
 
 #loading{
   position:fixed;
   inset:58px 0 0;
-  background:rgba(0,0,0,.72);
+  background:rgba(0,0,0,.75);
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:9000;
-  backdrop-filter:blur(3px);
+  z-index:5000
 }
 
 .spinner{
-  width:45px;
-  height:45px;
+  width:42px;
+  height:42px;
   border:4px solid #444;
   border-top-color:#fff;
   border-radius:50%;
-  animation:spin .7s linear infinite;
+  animation:spin .7s linear infinite
 }
 
 @keyframes spin{
   to{
-    transform:rotate(360deg);
+    transform:rotate(360deg)
   }
 }
-
-/* ERROR */
 
 #error{
   position:fixed;
@@ -186,120 +149,61 @@ button:active{
   align-items:center;
   justify-content:center;
   text-align:center;
-  padding:30px;
-  z-index:8000;
+  z-index:4000;
+  padding:30px
 }
 
 #errorbox{
-  max-width:700px;
+  max-width:650px
 }
 
 #error h2{
-  font-size:28px;
-  margin-top:0;
+  font-size:28px
 }
 
 #error p{
   color:#aaa;
-  line-height:1.6;
-  white-space:pre-wrap;
+  line-height:1.6
 }
-
-#retry{
-  margin-top:10px;
-}
-
-/* STATUS */
 
 #status{
   position:fixed;
-  left:50%;
   bottom:15px;
+  left:50%;
   transform:translateX(-50%);
   background:#222;
   border:1px solid #444;
   padding:8px 14px;
   border-radius:20px;
   display:none;
-  z-index:99999;
-  font-size:12px;
-}
-
-/* INTERNAL PAGE */
-
-.proxy-error{
-  font-family:Arial,sans-serif;
-  padding:40px;
-  color:#222;
-}
-
-.proxy-error h1{
-  margin-top:0;
-}
-
-/* MOBILE */
-
-@media(max-width:650px){
-
-  #bar{
-    gap:4px;
-  }
-
-  #bar button{
-    min-width:36px;
-    padding:0;
-  }
-
-  #home h1{
-    font-size:55px;
-  }
-
+  z-index:9999;
+  font-size:12px
 }
 </style>
 </head>
 
 <body>
 
-<!-- =====================================================
-     NAVIGATION BAR
-===================================================== -->
-
 <div id="bar">
 
 <button id="back" title="Back">←</button>
-
 <button id="forward" title="Forward">→</button>
-
 <button id="reload" title="Reload">↻</button>
 
 <input
-  id="address"
-  type="text"
-  placeholder="Enter URL or search..."
-  autocomplete="off"
-  autocapitalize="off"
-  spellcheck="false"
+ id="address"
+ placeholder="Enter URL or search..."
+ autocomplete="off"
+ spellcheck="false"
 >
 
 <button id="go">Go</button>
-
 <button id="cloak" title="Cloak">◉</button>
-
 <button id="fullscreen" title="Fullscreen">⛶</button>
 
 </div>
 
-
-<!-- =====================================================
-     PAGE
-===================================================== -->
-
 <div id="page"></div>
-
-
-<!-- =====================================================
-     HOME
-===================================================== -->
 
 <div id="home">
 
@@ -308,36 +212,22 @@ button:active{
 <h1>Web</h1>
 
 <p>
-Client-side proxy browser
+Ultraviolet Web Proxy
 </p>
 
 <input
-  id="homeinput"
-  type="text"
-  placeholder="https://example.com"
-  autocomplete="off"
-  spellcheck="false"
+ id="homeinput"
+ placeholder="https://example.com"
+ autocomplete="off"
 >
 
 </div>
 
 </div>
 
-
-<!-- =====================================================
-     LOADING
-===================================================== -->
-
 <div id="loading">
-
 <div class="spinner"></div>
-
 </div>
-
-
-<!-- =====================================================
-     ERROR
-===================================================== -->
 
 <div id="error">
 
@@ -347,57 +237,45 @@ Client-side proxy browser
 
 <p id="errortext"></p>
 
-<button id="retry">
-Retry
-</button>
+<button id="retry">Retry</button>
 
 </div>
 
 </div>
-
-
-<!-- =====================================================
-     STATUS
-===================================================== -->
 
 <div id="status"></div>
 
 
-<script>
+<!--
+===========================================================
+ULTRAVIOLET
+===========================================================
 
+These files MUST exist on the SAME origin as this page.
+
+Example:
+
+/uv/uv.bundle.js
+/uv/uv.handler.js
+/uv/uv.config.js
+/uv/uv.sw.js
+
+Do NOT load uv.sw.js from another domain.
+===========================================================
+-->
+
+<script src="https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv/uv.bundle.js"></script>
+<script src="https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv/uv.config.js"></script>
+<script src="https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv/uv.handler.js"></script>
+
+
+<script>
 "use strict";
 
 
-/* =====================================================
-   CONFIGURATION
-===================================================== */
-
-/*
-   Existing hosted proxy.
-
-   CorsProxy documents:
-
-   https://corsproxy.io/?url=ENCODED_TARGET
-
-   as its recommended format.
-*/
-
-const PROXY =
-  "https://demo-opensource.rammerhead.org/?url=";
-
-
-/*
-   Change this if you later want to use another
-   hosted CORS relay.
-*/
-
-const PROXY_NAME =
-  "CorsProxy";
-
-
-/* =====================================================
+/* =========================================================
    ELEMENTS
-===================================================== */
+========================================================= */
 
 const page =
   document.getElementById("page");
@@ -424,9 +302,9 @@ const status =
   document.getElementById("status");
 
 
-/* =====================================================
+/* =========================================================
    STATE
-===================================================== */
+========================================================= */
 
 let currentURL = "";
 
@@ -434,12 +312,12 @@ let historyList = [];
 
 let historyPosition = -1;
 
-let lastErrorURL = "";
+let uvReady = false;
 
 
-/* =====================================================
+/* =========================================================
    STATUS
-===================================================== */
+========================================================= */
 
 function showStatus(text){
 
@@ -449,25 +327,23 @@ function showStatus(text){
 
   clearTimeout(status.timer);
 
-  status.timer = setTimeout(() => {
-
-    status.style.display = "none";
-
-  },1800);
+  status.timer =
+    setTimeout(()=>{
+      status.style.display = "none";
+    },1800);
 
 }
 
 
-/* =====================================================
+/* =========================================================
    LOADING
-===================================================== */
+========================================================= */
 
 function showLoading(){
 
   loading.style.display = "flex";
 
 }
-
 
 function hideLoading(){
 
@@ -476,9 +352,9 @@ function hideLoading(){
 }
 
 
-/* =====================================================
-   NORMALIZE URL
-===================================================== */
+/* =========================================================
+   URL NORMALIZATION
+========================================================= */
 
 function normalizeURL(value){
 
@@ -490,12 +366,12 @@ function normalizeURL(value){
 
 
   /*
-     Already HTTP.
-  */
+   * Already a URL
+   */
 
   if(
-    value.startsWith("https://") ||
-    value.startsWith("http://")
+    value.startsWith("http://") ||
+    value.startsWith("https://")
   ){
 
     return value;
@@ -504,8 +380,8 @@ function normalizeURL(value){
 
 
   /*
-     Looks like a domain.
-  */
+   * Domain
+   */
 
   if(
     !value.includes(" ") &&
@@ -518,11 +394,8 @@ function normalizeURL(value){
 
 
   /*
-     Search.
-
-     DuckDuckGo is used instead of attempting
-     to search through the destination directly.
-  */
+   * Search
+   */
 
   return (
     "https://www.google.com/search?q=" +
@@ -532,973 +405,115 @@ function normalizeURL(value){
 }
 
 
-/* =====================================================
-   MAKE PROXY URL
-===================================================== */
+/* =========================================================
+   UV REGISTRATION
+========================================================= */
 
-function makeProxyURL(target){
+async function registerUV(){
 
-  return (
-    PROXY +
-    encodeURIComponent(target)
-  );
-
-}
+  if(uvReady)
+    return;
 
 
-/* =====================================================
-   ABSOLUTE URL
-===================================================== */
+  if(!("serviceWorker" in navigator)){
 
-function absoluteURL(value,base){
-
-  try{
-
-    return new URL(
-      value,
-      base
-    ).href;
-
-  }catch{
-
-    return value;
+    throw new Error(
+      "This browser does not support Service Workers."
+    );
 
   }
 
-}
-
-
-/* =====================================================
-   IS EXTERNAL RESOURCE
-===================================================== */
-
-function shouldIgnoreURL(url){
-
-  if(!url)
-    return true;
-
-  const lower =
-    url.toLowerCase().trim();
-
-  return (
-    lower.startsWith("#") ||
-    lower.startsWith("data:") ||
-    lower.startsWith("blob:") ||
-    lower.startsWith("javascript:") ||
-    lower.startsWith("mailto:") ||
-    lower.startsWith("tel:")
-  );
-
-}
-
-
-/* =====================================================
-   REWRITE CSS URLS
-===================================================== */
-
-function rewriteCSS(css,base){
 
   /*
-     Rewrite:
+   * UV requires HTTPS except localhost.
+   */
 
-       url(...)
-       @import "..."
+  if(
+    location.protocol !== "https:" &&
+    location.hostname !== "localhost" &&
+    location.hostname !== "127.0.0.1"
+  ){
 
-     into proxy URLs.
+    throw new Error(
+      "Ultraviolet requires HTTPS when hosted remotely."
+    );
 
-     This is intentionally conservative.
-  */
+  }
 
-  css =
-    css.replace(
-      /url\s*\(\s*(['"]?)(.*?)\1\s*\)/gi,
-      function(match,quote,url){
 
-        url = url.trim();
+  /*
+   * Make sure the UV configuration exists.
+   */
 
-        if(shouldIgnoreURL(url))
-          return match;
+  if(
+    typeof self.__uv$config === "undefined"
+  ){
 
-        const absolute =
-          absoluteURL(
-            url,
-            base
-          );
+    throw new Error(
+      "Ultraviolet configuration was not loaded."
+    );
 
-        return (
-          "url('" +
-          makeProxyURL(absolute) +
-          "')"
-        );
+  }
 
+
+  /*
+   * Register the LOCAL UV service worker.
+   *
+   * This must be on the same origin.
+   */
+
+  try{
+
+    await navigator.serviceWorker.register(
+      "/uv/uv.sw.js",
+      {
+        scope:
+          self.__uv$config.prefix
       }
     );
 
+  }catch(e){
 
-  return css;
-
-}
-
-
-/* =====================================================
-   REWRITE HTML
-===================================================== */
-
-function rewriteHTML(html,base){
-
-  const parser =
-    new DOMParser();
-
-  const doc =
-    parser.parseFromString(
-      html,
-      "text/html"
+    throw new Error(
+      "Could not register the Ultraviolet service worker: " +
+      e.message
     );
 
-
-  /*
-     Remove CSP/meta redirects.
-  */
-
-  doc
-    .querySelectorAll(
-      "meta[http-equiv='Content-Security-Policy']," +
-      "meta[http-equiv='content-security-policy']," +
-      "meta[http-equiv='refresh']"
-    )
-    .forEach(el => el.remove());
+  }
 
 
   /*
-     Remove scripts.
-
-     This prevents destination JavaScript from
-     executing inside the proxy application's origin.
-  */
-
-  doc
-    .querySelectorAll("script")
-    .forEach(el => el.remove());
-
-
-  /*
-     Rewrite normal URL attributes.
-  */
-
-  doc
-    .querySelectorAll(
-      "[href],[src],[action],[poster],[data-src]"
-    )
-    .forEach(el => {
-
-      [
-        "href",
-        "src",
-        "action",
-        "poster",
-        "data-src"
-      ].forEach(attr => {
-
-        if(!el.hasAttribute(attr))
-          return;
-
-        const original =
-          el.getAttribute(attr);
-
-        if(
-          !original ||
-          shouldIgnoreURL(original)
-        )
-          return;
-
-
-        /*
-           Fragment-only links remain local.
-        */
-
-        if(
-          original.trim().startsWith("#")
-        )
-          return;
-
-
-        const absolute =
-          absoluteURL(
-            original,
-            base
-          );
-
-
-        /*
-           Links are kept as normal absolute URLs.
-
-           The click interceptor below sends them
-           back through loadURL().
-        */
-
-        el.setAttribute(
-          attr,
-          absolute
-        );
-
-      });
-
-    });
-
-
-  /*
-     srcset
-  */
-
-  doc
-    .querySelectorAll("[srcset]")
-    .forEach(el => {
-
-      const original =
-        el.getAttribute("srcset");
-
-      const rewritten =
-        original
-          .split(",")
-          .map(item => {
-
-            const parts =
-              item.trim().split(/\s+/);
-
-            if(!parts[0])
-              return item;
-
-            if(
-              shouldIgnoreURL(parts[0])
-            )
-              return item;
-
-            parts[0] =
-              makeProxyURL(
-                absoluteURL(
-                  parts[0],
-                  base
-                )
-              );
-
-            return parts.join(" ");
-
-          })
-          .join(", ");
-
-      el.setAttribute(
-        "srcset",
-        rewritten
-      );
-
-    });
-
-
-  /*
-     Inline styles.
-  */
-
-  doc
-    .querySelectorAll("[style]")
-    .forEach(el => {
-
-      const style =
-        el.getAttribute("style");
-
-      el.setAttribute(
-        "style",
-        rewriteCSS(
-          style,
-          base
-        )
-      );
-
-    });
-
-
-  /*
-     Style elements.
-  */
-
-  doc
-    .querySelectorAll("style")
-    .forEach(el => {
-
-      el.textContent =
-        rewriteCSS(
-          el.textContent,
-          base
-        );
-
-    });
-
-
-  /*
-     Stylesheets.
-
-     Instead of allowing the browser to fetch them
-     directly, turn their href into proxy URLs.
-  */
-
-  doc
-    .querySelectorAll(
-      "link[rel='stylesheet'][href]"
-    )
-    .forEach(link => {
-
-      const href =
-        link.getAttribute("href");
-
-      if(
-        shouldIgnoreURL(href)
-      )
-        return;
-
-      const absolute =
-        absoluteURL(
-          href,
-          base
-        );
-
-      link.href =
-        makeProxyURL(
-          absolute
-        );
-
-    });
-
-
-  /*
-     Images/media/resources.
-
-     Route them through the existing proxy.
-  */
-
-  doc
-    .querySelectorAll(
-      "img[src]," +
-      "video[src]," +
-      "audio[src]," +
-      "source[src]," +
-      "track[src]"
-    )
-    .forEach(el => {
-
-      const src =
-        el.getAttribute("src");
-
-      if(
-        shouldIgnoreURL(src)
-      )
-        return;
-
-      const absolute =
-        absoluteURL(
-          src,
-          base
-        );
-
-      el.setAttribute(
-        "src",
-        makeProxyURL(
-          absolute
-        )
-      );
-
-    });
-
-
-  /*
-     Iframes are disabled because loading arbitrary
-     iframe content directly would bypass our loader.
-  */
-
-  doc
-    .querySelectorAll(
-      "iframe,object,embed"
-    )
-    .forEach(el => {
-
-      const src =
-        el.getAttribute("src");
-
-      if(src){
-
-        el.setAttribute(
-          "data-proxy-original-src",
-          absoluteURL(
-            src,
-            base
-          )
-        );
-
-      }
-
-      el.removeAttribute("src");
-
-    });
-
-
-  /*
-     Remove base elements.
-
-     The proxy URLs we inserted above are absolute.
-  */
-
-  doc
-    .querySelectorAll("base")
-    .forEach(el => el.remove());
-
-
-  /*
-     Forms are handled by JavaScript.
-  */
-
-  doc
-    .querySelectorAll("form")
-    .forEach(form => {
-
-      form.setAttribute(
-        "data-proxy-form",
-        "true"
-      );
-
-    });
-
-
-  return (
-    "<!DOCTYPE html>" +
-    doc.documentElement.outerHTML
-  );
-
-}
-
-
-/* =====================================================
-   FETCH TARGET
-===================================================== */
-
-async function fetchTarget(url){
-
-  showLoading();
-
-  error.style.display =
-    "none";
-
-  page.innerHTML = "";
-
+   * Wait for the worker.
+   */
 
   try{
 
-    const proxyURL =
-      makeProxyURL(url);
+    await navigator.serviceWorker.ready;
 
+  }catch(e){
 
-    showStatus(
-      "Fetching through " +
-      PROXY_NAME + "..."
-    );
-
-
-    const response =
-      await fetch(
-        proxyURL,
-        {
-          method:"GET",
-          credentials:"omit",
-          redirect:"follow",
-          cache:"no-store"
-        }
-      );
-
-
-    if(!response.ok){
-
-      throw new Error(
-        "Proxy HTTP " +
-        response.status +
-        " " +
-        response.statusText
-      );
-
-    }
-
-
-    const type =
-      (
-        response.headers.get(
-          "content-type"
-        ) || ""
-      ).toLowerCase();
-
-
-    /* ==============================================
-       HTML
-    ============================================== */
-
-    if(
-      type.includes("text/html") ||
-      type.includes("application/xhtml")
-    ){
-
-      const html =
-        await response.text();
-
-
-      const rewritten =
-        rewriteHTML(
-          html,
-          url
-        );
-
-
-      /*
-         Use a DOM document instead of directly
-         allowing scripts from the target.
-      */
-
-      page.innerHTML =
-        rewritten;
-
-
-      attachNavigation();
-
-      attachForms();
-
-    }
-
-
-    /* ==============================================
-       CSS
-    ============================================== */
-
-    else if(
-      type.includes("text/css")
-    ){
-
-      const css =
-        await response.text();
-
-      const style =
-        document.createElement(
-          "style"
-        );
-
-      style.textContent =
-        rewriteCSS(
-          css,
-          url
-        );
-
-      page.appendChild(
-        style
-      );
-
-    }
-
-
-    /* ==============================================
-       JSON
-    ============================================== */
-
-    else if(
-      type.includes("json")
-    ){
-
-      const text =
-        await response.text();
-
-      const pre =
-        document.createElement(
-          "pre"
-        );
-
-      pre.textContent =
-        text;
-
-      pre.style.whiteSpace =
-        "pre-wrap";
-
-      pre.style.padding =
-        "25px";
-
-      pre.style.margin =
-        "0";
-
-      pre.style.fontFamily =
-        "monospace";
-
-      page.appendChild(
-        pre
-      );
-
-    }
-
-
-    /* ==============================================
-       TEXT
-    ============================================== */
-
-    else if(
-      type.startsWith("text/")
-    ){
-
-      const text =
-        await response.text();
-
-      const pre =
-        document.createElement(
-          "pre"
-        );
-
-      pre.textContent =
-        text;
-
-      pre.style.whiteSpace =
-        "pre-wrap";
-
-      pre.style.padding =
-        "25px";
-
-      page.appendChild(
-        pre
-      );
-
-    }
-
-
-    /* ==============================================
-       IMAGE
-    ============================================== */
-
-    else if(
-      type.startsWith("image/")
-    ){
-
-      const blob =
-        await response.blob();
-
-      const objectURL =
-        URL.createObjectURL(
-          blob
-        );
-
-      const img =
-        document.createElement(
-          "img"
-        );
-
-      img.src =
-        objectURL;
-
-      img.style.maxWidth =
-        "100%";
-
-      img.style.display =
-        "block";
-
-      img.style.margin =
-        "20px auto";
-
-      page.appendChild(
-        img
-      );
-
-    }
-
-
-    /* ==============================================
-       OTHER
-    ============================================== */
-
-    else{
-
-      /*
-         For PDFs and other files, create a blob URL
-         and display it where the browser supports it.
-      */
-
-      const blob =
-        await response.blob();
-
-      const objectURL =
-        URL.createObjectURL(
-          blob
-        );
-
-      const iframe =
-        document.createElement(
-          "iframe"
-        );
-
-      iframe.src =
-        objectURL;
-
-      iframe.style.width =
-        "100%";
-
-      iframe.style.height =
-        "100%";
-
-      iframe.style.border =
-        "0";
-
-      page.appendChild(
-        iframe
-      );
-
-    }
-
-
-    currentURL =
-      url;
-
-    address.value =
-      url;
-
-    document.title =
-      getHostname(url);
-
-
-    home.style.display =
-      "none";
-
-
-    hideLoading();
-
-    showStatus(
-      "Loaded"
+    throw new Error(
+      "Ultraviolet service worker failed to become ready: " +
+      e.message
     );
 
   }
-  catch(err){
 
-    hideLoading();
 
-    page.innerHTML = "";
-
-    lastErrorURL =
-      url;
-
-    error.style.display =
-      "flex";
-
-    errortext.textContent =
-      "The destination could not be loaded through " +
-      PROXY_NAME +
-      ".\n\n" +
-      "URL: " +
-      url +
-      "\n\n" +
-      "Error: " +
-      err.message +
-      "\n\n" +
-      "The destination may require JavaScript, WebSockets, " +
-      "authentication, cookies, or may be blocked by the " +
-      "proxy service.";
-
-  }
+  uvReady = true;
 
 }
 
 
-/* =====================================================
-   HOSTNAME
-===================================================== */
-
-function getHostname(url){
-
-  try{
-
-    return new URL(
-      url
-    ).hostname;
-
-  }catch{
-
-    return "Web";
-
-  }
-
-}
-
-
-/* =====================================================
-   LINK NAVIGATION
-===================================================== */
-
-function attachNavigation(){
-
-  page
-    .querySelectorAll(
-      "a[href]"
-    )
-    .forEach(link => {
-
-      link.addEventListener(
-        "click",
-        event => {
-
-          const href =
-            link.getAttribute(
-              "href"
-            );
-
-          if(
-            !href ||
-            href.startsWith("#") ||
-            href.startsWith("javascript:") ||
-            href.startsWith("mailto:") ||
-            href.startsWith("tel:")
-          ){
-
-            return;
-
-          }
-
-
-          event.preventDefault();
-
-
-          const target =
-            absoluteURL(
-              href,
-              currentURL
-            );
-
-
-          loadURL(
-            target
-          );
-
-        }
-      );
-
-    });
-
-
-  /*
-     Handle buttons/links that use target="_blank".
-  */
-
-  page
-    .querySelectorAll(
-      "a[target]"
-    )
-    .forEach(link => {
-
-      link.removeAttribute(
-        "target"
-      );
-
-    });
-
-}
-
-
-/* =====================================================
-   FORM HANDLING
-===================================================== */
-
-function attachForms(){
-
-  page
-    .querySelectorAll(
-      "form[data-proxy-form]"
-    )
-    .forEach(form => {
-
-      form.addEventListener(
-        "submit",
-        event => {
-
-          event.preventDefault();
-
-
-          const method =
-            (
-              form.getAttribute(
-                "method"
-              ) || "GET"
-            ).toUpperCase();
-
-
-          const action =
-            form.getAttribute(
-              "action"
-            ) || currentURL;
-
-
-          const target =
-            absoluteURL(
-              action,
-              currentURL
-            );
-
-
-          /*
-             Static client proxy supports GET forms
-             reliably.
-          */
-
-          if(method !== "GET"){
-
-            showStatus(
-              "POST forms are not supported by this client proxy"
-            );
-
-            return;
-
-          }
-
-
-          const data =
-            new FormData(
-              form
-            );
-
-
-          const params =
-            new URLSearchParams(
-              data
-            );
-
-
-          const separator =
-            target.includes("?")
-              ? "&"
-              : "?";
-
-
-          const finalURL =
-            target +
-            separator +
-            params.toString();
-
-
-          loadURL(
-            finalURL
-          );
-
-        }
-      );
-
-    });
-
-}
-
-
-/* =====================================================
+/* =========================================================
    HISTORY
-===================================================== */
+========================================================= */
 
 function addHistory(url){
 
   if(
     historyPosition >= 0 &&
-    historyList[
-      historyPosition
-    ] === url
+    historyList[historyPosition] === url
   ){
 
     return;
@@ -1513,9 +528,7 @@ function addHistory(url){
     );
 
 
-  historyList.push(
-    url
-  );
+  historyList.push(url);
 
 
   historyPosition =
@@ -1524,59 +537,193 @@ function addHistory(url){
 }
 
 
-/* =====================================================
-   LOAD URL
-===================================================== */
+/* =========================================================
+   PROXY URL
+========================================================= */
 
-function loadURL(
-  value,
-  record = true
-){
+function makeProxyURL(url){
+
+  if(
+    !self.__uv$config ||
+    typeof self.__uv$config.encodeUrl !== "function"
+  ){
+
+    throw new Error(
+      "UV encodeUrl function is unavailable."
+    );
+
+  }
+
+
+  const encoded =
+    self.__uv$config.encodeUrl(url);
+
+
+  return (
+    self.__uv$config.prefix +
+    encoded
+  );
+
+}
+
+
+/* =========================================================
+   LOAD URL
+========================================================= */
+
+async function loadURL(value,record=true){
 
   const url =
-    normalizeURL(
-      value
-    );
+    normalizeURL(value);
 
 
   if(!url)
     return;
 
 
-  if(record){
+  showLoading();
 
-    addHistory(
-      url
+  error.style.display =
+    "none";
+
+
+  try{
+
+    /*
+     * Register UV first.
+     */
+
+    await registerUV();
+
+
+    /*
+     * Add browser-style history.
+     */
+
+    if(record){
+
+      addHistory(url);
+
+    }
+
+
+    currentURL =
+      url;
+
+    address.value =
+      url;
+
+
+    /*
+     * Convert target URL into UV URL.
+     */
+
+    const proxyURL =
+      makeProxyURL(url);
+
+
+    /*
+     * Hide home screen.
+     */
+
+    home.style.display =
+      "none";
+
+
+    /*
+     * Navigate through UV.
+     *
+     * The service worker intercepts this URL
+     * and sends the request through Bare.
+     */
+
+    page.src =
+      proxyURL;
+
+
+    /*
+     * The proxied document lives inside the
+     * iframe. This keeps our browser controls
+     * visible.
+     */
+
+    page.onload = ()=>{
+
+      hideLoading();
+
+      showStatus("Loaded");
+
+    };
+
+
+    page.onerror = ()=>{
+
+      hideLoading();
+
+      showProxyError(
+        "The proxied page could not be loaded."
+      );
+
+    };
+
+
+    document.title =
+      "Web — " +
+      (()=>{
+
+        try{
+
+          return new URL(url).hostname;
+
+        }catch{
+
+          return "Proxy";
+
+        }
+
+      })();
+
+
+  }catch(e){
+
+    hideLoading();
+
+    showProxyError(
+      e.message
     );
 
   }
 
-
-  currentURL =
-    url;
-
-  address.value =
-    url;
+}
 
 
-  fetchTarget(
-    url
-  );
+/* =========================================================
+   ERROR
+========================================================= */
+
+function showProxyError(message){
+
+  page.src =
+    "about:blank";
+
+  error.style.display =
+    "flex";
+
+  errortext.textContent =
+    message;
 
 }
 
 
-/* =====================================================
+/* =========================================================
    BACK
-===================================================== */
+========================================================= */
 
 document
   .getElementById("back")
-  .onclick = () => {
+  .onclick = ()=>{
 
-    if(
-      historyPosition <= 0
-    ){
+    if(historyPosition <= 0){
 
       showStatus(
         "No previous page"
@@ -1600,13 +747,13 @@ document
   };
 
 
-/* =====================================================
+/* =========================================================
    FORWARD
-===================================================== */
+========================================================= */
 
 document
   .getElementById("forward")
-  .onclick = () => {
+  .onclick = ()=>{
 
     if(
       historyPosition >=
@@ -1635,18 +782,19 @@ document
   };
 
 
-/* =====================================================
+/* =========================================================
    RELOAD
-===================================================== */
+========================================================= */
 
 document
   .getElementById("reload")
-  .onclick = () => {
+  .onclick = ()=>{
 
     if(currentURL){
 
-      fetchTarget(
-        currentURL
+      loadURL(
+        currentURL,
+        false
       );
 
     }
@@ -1654,13 +802,13 @@ document
   };
 
 
-/* =====================================================
-   GO
-===================================================== */
+/* =========================================================
+   ADDRESS BAR
+========================================================= */
 
 document
   .getElementById("go")
-  .onclick = () => {
+  .onclick = ()=>{
 
     loadURL(
       address.value
@@ -1671,13 +819,9 @@ document
 
 address.addEventListener(
   "keydown",
-  event => {
+  event=>{
 
-    if(
-      event.key === "Enter"
-    ){
-
-      event.preventDefault();
+    if(event.key === "Enter"){
 
       loadURL(
         address.value
@@ -1689,19 +833,15 @@ address.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    HOME INPUT
-===================================================== */
+========================================================= */
 
 homeinput.addEventListener(
   "keydown",
-  event => {
+  event=>{
 
-    if(
-      event.key === "Enter"
-    ){
-
-      event.preventDefault();
+    if(event.key === "Enter"){
 
       loadURL(
         homeinput.value
@@ -1713,18 +853,19 @@ homeinput.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    RETRY
-===================================================== */
+========================================================= */
 
 document
   .getElementById("retry")
-  .onclick = () => {
+  .onclick = ()=>{
 
-    if(lastErrorURL){
+    if(currentURL){
 
-      fetchTarget(
-        lastErrorURL
+      loadURL(
+        currentURL,
+        false
       );
 
     }
@@ -1732,34 +873,28 @@ document
   };
 
 
-/* =====================================================
+/* =========================================================
    FULLSCREEN
-===================================================== */
+========================================================= */
 
 document
   .getElementById("fullscreen")
-  .onclick = async () => {
+  .onclick = async()=>{
 
     try{
 
-      if(
-        !document.fullscreenElement
-      ){
+      if(!document.fullscreenElement){
 
-        await document
-          .documentElement
+        await document.documentElement
           .requestFullscreen();
 
-      }
-      else{
+      }else{
 
-        await document
-          .exitFullscreen();
+        await document.exitFullscreen();
 
       }
 
-    }
-    catch{
+    }catch(e){
 
       showStatus(
         "Fullscreen unavailable"
@@ -1770,13 +905,13 @@ document
   };
 
 
-/* =====================================================
+/* =========================================================
    CLOAK
-===================================================== */
+========================================================= */
 
 document
   .getElementById("cloak")
-  .onclick = () => {
+  .onclick = ()=>{
 
     document.title =
       "Google";
@@ -1809,11 +944,15 @@ document
       "data:image/svg+xml," +
       encodeURIComponent(
         `<svg xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="30"
-        fill="white"/>
-        <path d="M32 10a22 22 0 1 0 22 22H32z"
-        fill="#4285f4"/>
+          viewBox="0 0 64 64">
+          <circle
+            cx="32"
+            cy="32"
+            r="30"
+            fill="white"/>
+          <path
+            d="M32 10a22 22 0 1 0 22 22H32z"
+            fill="#4285f4"/>
         </svg>`
       );
 
@@ -1825,18 +964,14 @@ document
   };
 
 
-/* =====================================================
-   KEYBOARD SHORTCUTS
-===================================================== */
+/* =========================================================
+   KEYBOARD
+========================================================= */
 
 document.addEventListener(
   "keydown",
-  event => {
+  event=>{
 
-
-    /*
-       Ctrl + L
-    */
 
     if(
       event.ctrlKey &&
@@ -1852,10 +987,6 @@ document.addEventListener(
     }
 
 
-    /*
-       Alt + Left
-    */
-
     if(
       event.altKey &&
       event.key === "ArrowLeft"
@@ -1870,10 +1001,6 @@ document.addEventListener(
     }
 
 
-    /*
-       Alt + Right
-    */
-
     if(
       event.altKey &&
       event.key === "ArrowRight"
@@ -1887,15 +1014,34 @@ document.addEventListener(
 
     }
 
-  });
+  }
+);
 
 
-/* =====================================================
-   INITIAL STATE
-===================================================== */
+/* =========================================================
+   INITIALIZE
+========================================================= */
 
-homeinput.focus();
+(async function(){
 
+  try{
+
+    await registerUV();
+
+    showStatus(
+      "Ultraviolet ready"
+    );
+
+  }catch(e){
+
+    showProxyError(
+      e.message +
+      "\n\nMake sure the UV files are installed at /uv/ and the site is HTTPS."
+    );
+
+  }
+
+})();
 </script>
 
 </body>
