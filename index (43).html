@@ -3,19 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Interstellar</title>
+<meta name="referrer" content="no-referrer">
+<title>Web Proxy</title>
 
 <style>
-*{box-sizing:border-box}
-
-:root{
-  --bg:#08090d;
-  --panel:#11131a;
-  --panel2:#181b23;
-  --border:#292d38;
-  --text:#fff;
-  --muted:#8d94a3;
-  --accent:#ffffff;
+*{
+  box-sizing:border-box;
 }
 
 html,body{
@@ -23,429 +16,242 @@ html,body{
   width:100%;
   height:100%;
   overflow:hidden;
-  background:var(--bg);
-  color:var(--text);
+  background:#080808;
+  color:#fff;
   font-family:Arial,Helvetica,sans-serif;
 }
 
-button,input{
-  font:inherit;
-}
-
 button{
+  height:40px;
+  min-width:40px;
   border:0;
-  color:var(--text);
-  background:var(--panel2);
+  border-radius:8px;
+  background:#222;
+  color:#fff;
   cursor:pointer;
+  font-size:16px;
+  transition:.15s;
 }
 
 button:hover{
-  background:#252936;
+  background:#333;
 }
 
-#browser{
-  width:100%;
-  height:100%;
-  display:flex;
-  flex-direction:column;
+button:active{
+  transform:scale(.96);
 }
 
-/* =========================
-   TABS
-========================= */
-
-#tabs{
-  height:40px;
-  display:flex;
-  align-items:center;
-  gap:5px;
-  padding:5px 7px 0;
-  background:#0b0c10;
-  border-bottom:1px solid var(--border);
-  overflow-x:auto;
-}
-
-.tab{
-  height:35px;
-  min-width:130px;
-  max-width:220px;
-  padding:0 10px;
-  border-radius:8px 8px 0 0;
-  background:#11131a;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  cursor:pointer;
-  user-select:none;
-}
-
-.tab.active{
-  background:#1a1d25;
-}
-
-.tab-title{
-  flex:1;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  font-size:13px;
-}
-
-.tab-close{
-  width:20px;
-  height:20px;
-  border-radius:5px;
-  background:transparent;
-}
-
-#newtab{
-  width:32px;
-  height:32px;
-  border-radius:7px;
-}
-
-/* =========================
-   NAVBAR
-========================= */
+/* TOP BAR */
 
 #bar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
   height:58px;
-  background:#11131a;
-  border-bottom:1px solid var(--border);
+  background:#111;
+  border-bottom:1px solid #292929;
   display:flex;
   align-items:center;
   gap:7px;
   padding:8px;
-  z-index:1000;
-}
-
-.nav{
-  width:40px;
-  min-width:40px;
-  height:40px;
-  border-radius:8px;
+  z-index:10000;
 }
 
 #address{
   flex:1;
   min-width:0;
   height:40px;
-  border:1px solid #333844;
-  border-radius:9px;
+  border:1px solid #333;
   outline:none;
-  background:#191c24;
+  border-radius:8px;
+  background:#191919;
   color:#fff;
-  padding:0 14px;
+  padding:0 13px;
+  font-size:14px;
 }
 
 #address:focus{
-  border-color:#6c7280;
+  border-color:#777;
 }
 
 #go{
-  width:48px;
-  height:40px;
-  border-radius:8px;
   background:#fff;
   color:#000;
   font-weight:bold;
 }
 
-/* =========================
-   CONTENT
-========================= */
+/* PAGE */
 
-#content{
-  position:relative;
-  flex:1;
-  min-height:0;
-}
-
-.page{
-  position:absolute;
-  inset:0;
+#page{
+  position:fixed;
+  top:58px;
+  left:0;
+  right:0;
+  bottom:0;
   overflow:auto;
   background:#fff;
   color:#000;
-  display:none;
+  z-index:1;
 }
 
-.page.active{
-  display:block;
-}
-
-/* =========================
-   HOME
-========================= */
+/* HOME */
 
 #home{
-  position:absolute;
-  inset:0;
-  overflow:auto;
+  position:fixed;
+  top:58px;
+  left:0;
+  right:0;
+  bottom:0;
   background:
-    radial-gradient(circle at 50% 25%,#252a38 0,#10121a 38%,#08090d 72%);
-}
-
-.home-inner{
-  width:min(950px,92%);
-  margin:auto;
-  padding:8vh 0 60px;
+    radial-gradient(
+      circle at center,
+      #242424 0,
+      #111 42%,
+      #070707 75%
+    );
+  display:flex;
+  justify-content:center;
+  align-items:center;
   text-align:center;
+  z-index:100;
 }
 
-.logo{
-  font-size:64px;
-  font-weight:800;
+#homebox{
+  width:min(760px,90%);
+}
+
+#home h1{
+  margin:0;
+  font-size:70px;
   letter-spacing:-4px;
-  margin-bottom:8px;
 }
 
-.subtitle{
-  color:var(--muted);
-  margin-bottom:30px;
+#home p{
+  color:#999;
+  margin:8px 0 28px;
 }
 
-#homeSearch{
+#homeinput{
   width:100%;
-  max-width:720px;
-  height:56px;
-  padding:0 18px;
-  border:1px solid #343844;
-  border-radius:12px;
-  background:#151821;
-  color:white;
+  height:54px;
+  border-radius:11px;
+  border:1px solid #383838;
+  background:#151515;
+  color:#fff;
   outline:none;
+  padding:0 17px;
   font-size:15px;
 }
 
-#homeSearch:focus{
-  border-color:#777e8c;
+#homeinput:focus{
+  border-color:#777;
 }
 
-.section{
-  margin-top:40px;
-  text-align:left;
-}
-
-.section-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:12px;
-}
-
-.section-head h2{
-  margin:0;
-  font-size:20px;
-}
-
-.section-head span{
-  color:var(--muted);
-  font-size:12px;
-}
-
-.cards{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
-  gap:12px;
-}
-
-.card{
-  min-height:105px;
-  padding:17px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:rgba(22,25,33,.9);
-  cursor:pointer;
-  transition:.15s;
-}
-
-.card:hover{
-  transform:translateY(-2px);
-  background:#20242e;
-}
-
-.card-icon{
-  font-size:27px;
-  margin-bottom:12px;
-}
-
-.card-name{
-  font-weight:bold;
-}
-
-.card-desc{
-  color:var(--muted);
-  font-size:12px;
-  margin-top:5px;
-}
-
-/* =========================
-   PANELS
-========================= */
-
-.panel-page{
-  position:absolute;
-  inset:0;
-  overflow:auto;
-  padding:35px;
-  background:var(--bg);
-}
-
-.panel-page h1{
-  margin-top:0;
-}
-
-.panel{
-  max-width:900px;
-  margin:15px auto;
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:20px;
-}
-
-.panel button{
-  padding:10px 14px;
-  border-radius:8px;
-  margin:4px;
-}
-
-.setting-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:15px;
-  padding:15px 0;
-  border-bottom:1px solid var(--border);
-}
-
-.setting-row:last-child{
-  border-bottom:0;
-}
-
-.setting-label{
-  font-weight:bold;
-}
-
-.setting-desc{
-  color:var(--muted);
-  font-size:12px;
-  margin-top:4px;
-}
-
-select{
-  background:#20242d;
-  color:white;
-  border:1px solid #343844;
-  padding:9px;
-  border-radius:7px;
-}
-
-/* =========================
-   LOADING
-========================= */
+/* LOADING */
 
 #loading{
-  position:absolute;
-  inset:0;
-  background:rgba(5,6,9,.82);
+  position:fixed;
+  inset:58px 0 0;
+  background:rgba(0,0,0,.72);
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:5000;
+  z-index:9000;
+  backdrop-filter:blur(3px);
 }
 
 .spinner{
-  width:42px;
-  height:42px;
-  border:4px solid #454954;
+  width:45px;
+  height:45px;
+  border:4px solid #444;
   border-top-color:#fff;
   border-radius:50%;
   animation:spin .7s linear infinite;
 }
 
 @keyframes spin{
-  to{transform:rotate(360deg)}
+  to{
+    transform:rotate(360deg);
+  }
 }
 
-/* =========================
-   ERROR
-========================= */
+/* ERROR */
 
 #error{
-  position:absolute;
-  inset:0;
-  background:#08090d;
+  position:fixed;
+  inset:58px 0 0;
+  background:#080808;
   display:none;
   align-items:center;
   justify-content:center;
   text-align:center;
   padding:30px;
-  z-index:4000;
+  z-index:8000;
 }
 
 #errorbox{
-  max-width:650px;
+  max-width:700px;
 }
 
 #error h2{
   font-size:28px;
+  margin-top:0;
 }
 
 #error p{
-  color:#9ba1ad;
+  color:#aaa;
   line-height:1.6;
+  white-space:pre-wrap;
 }
 
-#error button{
-  padding:11px 18px;
-  border-radius:8px;
+#retry{
+  margin-top:10px;
 }
 
-/* =========================
-   STATUS
-========================= */
+/* STATUS */
 
 #status{
   position:fixed;
-  bottom:17px;
   left:50%;
+  bottom:15px;
   transform:translateX(-50%);
-  background:#20242d;
-  border:1px solid #404551;
-  padding:9px 15px;
+  background:#222;
+  border:1px solid #444;
+  padding:8px 14px;
   border-radius:20px;
   display:none;
-  z-index:9999;
+  z-index:99999;
   font-size:12px;
 }
 
-/* =========================
-   MOBILE
-========================= */
+/* INTERNAL PAGE */
 
-@media(max-width:600px){
+.proxy-error{
+  font-family:Arial,sans-serif;
+  padding:40px;
+  color:#222;
+}
 
-  .logo{
-    font-size:48px;
-  }
+.proxy-error h1{
+  margin-top:0;
+}
+
+/* MOBILE */
+
+@media(max-width:650px){
 
   #bar{
-    height:55px;
+    gap:4px;
   }
 
-  .nav{
-    width:36px;
+  #bar button{
     min-width:36px;
+    padding:0;
   }
 
-  #address{
-    font-size:13px;
-  }
-
-  .panel-page{
-    padding:20px;
+  #home h1{
+    font-size:55px;
   }
 
 }
@@ -454,284 +260,156 @@ select{
 
 <body>
 
-<div id="browser">
+<!-- =====================================================
+     NAVIGATION BAR
+===================================================== -->
 
-  <!-- =========================
-       TABS
-  ========================== -->
+<div id="bar">
 
-  <div id="tabs">
-    <button id="newtab" title="New tab">+</button>
-  </div>
+<button id="back" title="Back">←</button>
 
-  <!-- =========================
-       NAVIGATION
-  ========================== -->
+<button id="forward" title="Forward">→</button>
 
-  <div id="bar">
+<button id="reload" title="Reload">↻</button>
 
-    <button class="nav" id="back" title="Back">←</button>
-    <button class="nav" id="forward" title="Forward">→</button>
-    <button class="nav" id="reload" title="Reload">↻</button>
+<input
+  id="address"
+  type="text"
+  placeholder="Enter URL or search..."
+  autocomplete="off"
+  autocapitalize="off"
+  spellcheck="false"
+>
 
-    <input
-      id="address"
-      placeholder="Search or enter URL..."
-      autocomplete="off"
-      spellcheck="false"
-    >
+<button id="go">Go</button>
 
-    <button id="go">Go</button>
+<button id="cloak" title="Cloak">◉</button>
 
-    <button class="nav" id="cloak" title="Cloak">◉</button>
-    <button class="nav" id="fullscreen" title="Fullscreen">⛶</button>
-
-  </div>
-
-  <!-- =========================
-       CONTENT
-  ========================== -->
-
-  <div id="content">
-
-    <!-- HOME -->
-
-    <div id="home">
-
-      <div class="home-inner">
-
-        <div class="logo">Interstellar</div>
-
-        <div class="subtitle">
-          Browse the web from one self-contained HTML file.
-        </div>
-
-        <input
-          id="homeSearch"
-          placeholder="Search or enter a URL..."
-          autocomplete="off"
-        >
-
-        <div class="section">
-
-          <div class="section-head">
-            <h2>Apps</h2>
-            <span>Quick launch</span>
-          </div>
-
-          <div class="cards" id="apps"></div>
-
-        </div>
-
-        <div class="section">
-
-          <div class="section-head">
-            <h2>Games</h2>
-            <span>Quick launch</span>
-          </div>
-
-          <div class="cards" id="games"></div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- WEB PAGE -->
-
-    <div id="webpage" class="page"></div>
-
-    <!-- FAVORITES -->
-
-    <div id="favoritesPage" class="panel-page" style="display:none">
-
-      <h1>Favorites</h1>
-
-      <div class="panel" id="favoritesList">
-        No favorites yet.
-      </div>
-
-    </div>
-
-    <!-- HISTORY -->
-
-    <div id="historyPage" class="panel-page" style="display:none">
-
-      <h1>History</h1>
-
-      <div class="panel" id="historyList">
-        No history yet.
-      </div>
-
-    </div>
-
-    <!-- SETTINGS -->
-
-    <div id="settingsPage" class="panel-page" style="display:none">
-
-      <h1>Settings</h1>
-
-      <div class="panel">
-
-        <div class="setting-row">
-
-          <div>
-            <div class="setting-label">Search engine</div>
-            <div class="setting-desc">
-              Used when you enter text instead of a URL.
-            </div>
-          </div>
-
-          <select id="searchEngine">
-            <option value="google">Google</option>
-            <option value="bing">Bing</option>
-            <option value="duck">DuckDuckGo</option>
-            <option value="brave">Brave</option>
-          </select>
-
-        </div>
-
-        <div class="setting-row">
-
-          <div>
-            <div class="setting-label">Cloak title</div>
-            <div class="setting-desc">
-              Change the browser title and favicon.
-            </div>
-          </div>
-
-          <button id="cloakSetting">
-            Cloak
-          </button>
-
-        </div>
-
-        <div class="setting-row">
-
-          <div>
-            <div class="setting-label">Clear history</div>
-            <div class="setting-desc">
-              Remove locally stored browsing history.
-            </div>
-          </div>
-
-          <button id="clearHistory">
-            Clear
-          </button>
-
-        </div>
-
-        <div class="setting-row">
-
-          <div>
-            <div class="setting-label">Reset settings</div>
-            <div class="setting-desc">
-              Restore default local settings.
-            </div>
-          </div>
-
-          <button id="resetSettings">
-            Reset
-          </button>
-
-        </div>
-
-      </div>
-
-      <div class="panel">
-
-        <div class="setting-label">
-          Proxy configuration
-        </div>
-
-        <div class="setting-desc" style="margin:8px 0 15px">
-          This HTML uses the proxy endpoint defined in
-          <code>PROXY_PREFIX</code> in the source.
-        </div>
-
-        <code id="proxyDisplay"></code>
-
-      </div>
-
-    </div>
-
-    <!-- LOADING -->
-
-    <div id="loading">
-      <div class="spinner"></div>
-    </div>
-
-    <!-- ERROR -->
-
-    <div id="error">
-
-      <div id="errorbox">
-
-        <h2>Could not load this website</h2>
-
-        <p id="errortext"></p>
-
-        <button id="retry">
-          Retry
-        </button>
-
-        <button id="errorHome">
-          Home
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
+<button id="fullscreen" title="Fullscreen">⛶</button>
 
 </div>
 
+
+<!-- =====================================================
+     PAGE
+===================================================== -->
+
+<div id="page"></div>
+
+
+<!-- =====================================================
+     HOME
+===================================================== -->
+
+<div id="home">
+
+<div id="homebox">
+
+<h1>Web</h1>
+
+<p>
+Client-side proxy browser
+</p>
+
+<input
+  id="homeinput"
+  type="text"
+  placeholder="https://example.com"
+  autocomplete="off"
+  spellcheck="false"
+>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     LOADING
+===================================================== -->
+
+<div id="loading">
+
+<div class="spinner"></div>
+
+</div>
+
+
+<!-- =====================================================
+     ERROR
+===================================================== -->
+
+<div id="error">
+
+<div id="errorbox">
+
+<h2>Could not load this website</h2>
+
+<p id="errortext"></p>
+
+<button id="retry">
+Retry
+</button>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     STATUS
+===================================================== -->
+
 <div id="status"></div>
 
+
 <script>
+
 "use strict";
 
-/* =========================================================
-   PROXY CONFIGURATION
-========================================================= */
+
+/* =====================================================
+   CONFIGURATION
+===================================================== */
 
 /*
-   This is the endpoint used to fetch cross-origin pages.
+   Existing hosted proxy.
 
-   A static HTML file cannot disable browser CORS itself.
-   The endpoint must be a CORS-enabled service that fetches
-   the destination and returns it to this page.
+   CorsProxy documents:
 
-   Replace this with your own endpoint if desired.
+   https://corsproxy.io/?url=ENCODED_TARGET
+
+   as its recommended format.
 */
 
-const PROXY_PREFIX =
+const PROXY =
   "https://corsproxy.io/?url=";
 
 
-/* =========================================================
+/*
+   Change this if you later want to use another
+   hosted CORS relay.
+*/
+
+const PROXY_NAME =
+  "CorsProxy";
+
+
+/* =====================================================
    ELEMENTS
-========================================================= */
+===================================================== */
 
-const tabs =
-  document.getElementById("tabs");
-
-const content =
-  document.getElementById("content");
-
-const home =
-  document.getElementById("home");
-
-const webpage =
-  document.getElementById("webpage");
+const page =
+  document.getElementById("page");
 
 const address =
   document.getElementById("address");
 
-const homeSearch =
-  document.getElementById("homeSearch");
+const home =
+  document.getElementById("home");
+
+const homeinput =
+  document.getElementById("homeinput");
 
 const loading =
   document.getElementById("loading");
@@ -745,199 +423,51 @@ const errortext =
 const status =
   document.getElementById("status");
 
-const apps =
-  document.getElementById("apps");
 
-const games =
-  document.getElementById("games");
-
-const favoritesPage =
-  document.getElementById("favoritesPage");
-
-const historyPage =
-  document.getElementById("historyPage");
-
-const settingsPage =
-  document.getElementById("settingsPage");
-
-
-/* =========================================================
+/* =====================================================
    STATE
-========================================================= */
+===================================================== */
 
 let currentURL = "";
 
-let historyList =
-  JSON.parse(
-    localStorage.getItem("interstellarHistory") ||
-    "[]"
-  );
+let historyList = [];
 
-let favorites =
-  JSON.parse(
-    localStorage.getItem("interstellarFavorites") ||
-    "[]"
-  );
+let historyPosition = -1;
 
-let historyPosition =
-  -1;
-
-let tabsData = [];
-
-let activeTab = null;
+let lastErrorURL = "";
 
 
-/* =========================================================
-   BUILT-IN APPS
-========================================================= */
-
-const APP_DATA = [
-
-  {
-    icon:"🔎",
-    name:"Google",
-    desc:"Search the web",
-    url:"https://www.google.com/"
-  },
-
-  {
-    icon:"▶️",
-    name:"YouTube",
-    desc:"Watch videos",
-    url:"https://www.youtube.com/"
-  },
-
-  {
-    icon:"💬",
-    name:"Reddit",
-    desc:"Communities",
-    url:"https://www.reddit.com/"
-  },
-
-  {
-    icon:"📚",
-    name:"Wikipedia",
-    desc:"Encyclopedia",
-    url:"https://www.wikipedia.org/"
-  },
-
-  {
-    icon:"🐙",
-    name:"GitHub",
-    desc:"Code hosting",
-    url:"https://github.com/"
-  },
-
-  {
-    icon:"🎵",
-    name:"SoundCloud",
-    desc:"Music",
-    url:"https://soundcloud.com/"
-  }
-
-];
-
-
-/* =========================================================
-   BUILT-IN GAMES
-========================================================= */
-
-const GAME_DATA = [
-
-  {
-    icon:"🕹️",
-    name:"2048",
-    desc:"Play 2048",
-    url:"https://play2048.co/"
-  },
-
-  {
-    icon:"♟️",
-    name:"Chess",
-    desc:"Play chess",
-    url:"https://www.chess.com/play"
-  },
-
-  {
-    icon:"🧩",
-    name:"Puzzle",
-    desc:"Online puzzles",
-    url:"https://www.jigsawexplorer.com/"
-  },
-
-  {
-    icon:"🎮",
-    name:"Game Portal",
-    desc:"Browser games",
-    url:"https://poki.com/"
-  }
-
-];
-
-
-/* =========================================================
-   RENDER CARDS
-========================================================= */
-
-function renderCards(container,data){
-
-  container.innerHTML = "";
-
-  data.forEach(item=>{
-
-    const card =
-      document.createElement("div");
-
-    card.className = "card";
-
-    card.innerHTML = `
-      <div class="card-icon">${item.icon}</div>
-      <div class="card-name">${item.name}</div>
-      <div class="card-desc">${item.desc}</div>
-    `;
-
-    card.onclick = ()=>{
-      loadURL(item.url);
-    };
-
-    container.appendChild(card);
-
-  });
-
-}
-
-renderCards(apps,APP_DATA);
-renderCards(games,GAME_DATA);
-
-
-/* =========================================================
+/* =====================================================
    STATUS
-========================================================= */
+===================================================== */
 
 function showStatus(text){
 
   status.textContent = text;
+
   status.style.display = "block";
 
   clearTimeout(status.timer);
 
-  status.timer =
-    setTimeout(()=>{
-      status.style.display = "none";
-    },1800);
+  status.timer = setTimeout(() => {
+
+    status.style.display = "none";
+
+  },1800);
 
 }
 
 
-/* =========================================================
+/* =====================================================
    LOADING
-========================================================= */
+===================================================== */
 
 function showLoading(){
 
   loading.style.display = "flex";
 
 }
+
 
 function hideLoading(){
 
@@ -946,9 +476,9 @@ function hideLoading(){
 }
 
 
-/* =========================================================
+/* =====================================================
    NORMALIZE URL
-========================================================= */
+===================================================== */
 
 function normalizeURL(value){
 
@@ -958,14 +488,24 @@ function normalizeURL(value){
   if(!value)
     return null;
 
+
+  /*
+     Already HTTP.
+  */
+
   if(
-    value.startsWith("http://") ||
-    value.startsWith("https://")
+    value.startsWith("https://") ||
+    value.startsWith("http://")
   ){
 
     return value;
 
   }
+
+
+  /*
+     Looks like a domain.
+  */
 
   if(
     !value.includes(" ") &&
@@ -976,101 +516,133 @@ function normalizeURL(value){
 
   }
 
-  const engine =
-    localStorage.getItem(
-      "interstellarSearchEngine"
-    ) || "google";
 
-  let base;
+  /*
+     Search.
 
-  if(engine === "bing"){
-    base =
-      "https://www.bing.com/search?q=";
-  }
-  else if(engine === "duck"){
-    base =
-      "https://duckduckgo.com/?q=";
-  }
-  else if(engine === "brave"){
-    base =
-      "https://search.brave.com/search?q=";
-  }
-  else{
-    base =
-      "https://www.google.com/search?q=";
-  }
-
-  return base +
-    encodeURIComponent(value);
-
-}
-
-
-/* =========================================================
-   PROXY URL
-========================================================= */
-
-function proxyURL(url){
+     DuckDuckGo is used instead of attempting
+     to search through the destination directly.
+  */
 
   return (
-    PROXY_PREFIX +
-    encodeURIComponent(url)
+    "https://www.google.com/search?q=" +
+    encodeURIComponent(value)
   );
 
 }
 
 
-/* =========================================================
-   PROXY FETCH
-========================================================= */
+/* =====================================================
+   MAKE PROXY URL
+===================================================== */
 
-async function proxyFetch(url){
+function makeProxyURL(target){
 
-  const response =
-    await fetch(
-      proxyURL(url),
-      {
-        method:"GET",
-        credentials:"omit",
-        redirect:"follow"
+  return (
+    PROXY +
+    encodeURIComponent(target)
+  );
+
+}
+
+
+/* =====================================================
+   ABSOLUTE URL
+===================================================== */
+
+function absoluteURL(value,base){
+
+  try{
+
+    return new URL(
+      value,
+      base
+    ).href;
+
+  }catch{
+
+    return value;
+
+  }
+
+}
+
+
+/* =====================================================
+   IS EXTERNAL RESOURCE
+===================================================== */
+
+function shouldIgnoreURL(url){
+
+  if(!url)
+    return true;
+
+  const lower =
+    url.toLowerCase().trim();
+
+  return (
+    lower.startsWith("#") ||
+    lower.startsWith("data:") ||
+    lower.startsWith("blob:") ||
+    lower.startsWith("javascript:") ||
+    lower.startsWith("mailto:") ||
+    lower.startsWith("tel:")
+  );
+
+}
+
+
+/* =====================================================
+   REWRITE CSS URLS
+===================================================== */
+
+function rewriteCSS(css,base){
+
+  /*
+     Rewrite:
+
+       url(...)
+       @import "..."
+
+     into proxy URLs.
+
+     This is intentionally conservative.
+  */
+
+  css =
+    css.replace(
+      /url\s*\(\s*(['"]?)(.*?)\1\s*\)/gi,
+      function(match,quote,url){
+
+        url = url.trim();
+
+        if(shouldIgnoreURL(url))
+          return match;
+
+        const absolute =
+          absoluteURL(
+            url,
+            base
+          );
+
+        return (
+          "url('" +
+          makeProxyURL(absolute) +
+          "')"
+        );
+
       }
     );
 
-  if(!response.ok){
 
-    throw new Error(
-      "Proxy returned HTTP " +
-      response.status
-    );
-
-  }
-
-  return response;
+  return css;
 
 }
 
 
-/* =========================================================
-   ABSOLUTE URL
-========================================================= */
-
-function absoluteURL(url, base){
-
-  try {
-    const absolute =
-      new URL(url, base).href;
-
-    return absolute;
-
-  } catch {
-    return url;
-  }
-}
-
-
-/* =========================================================
+/* =====================================================
    REWRITE HTML
-========================================================= */
+===================================================== */
 
 function rewriteHTML(html,base){
 
@@ -1083,8 +655,9 @@ function rewriteHTML(html,base){
       "text/html"
     );
 
+
   /*
-    Remove CSP and refresh redirects.
+     Remove CSP/meta redirects.
   */
 
   doc
@@ -1093,154 +666,301 @@ function rewriteHTML(html,base){
       "meta[http-equiv='content-security-policy']," +
       "meta[http-equiv='refresh']"
     )
-    .forEach(el=>el.remove());
+    .forEach(el => el.remove());
 
 
   /*
-    Remove scripts.
+     Remove scripts.
 
-    Scripts from another origin cannot safely be allowed
-    to execute directly inside this document.
+     This prevents destination JavaScript from
+     executing inside the proxy application's origin.
   */
 
   doc
     .querySelectorAll("script")
-    .forEach(el=>el.remove());
+    .forEach(el => el.remove());
 
 
   /*
-    Rewrite links and resources through the proxy.
+     Rewrite normal URL attributes.
   */
 
   doc
     .querySelectorAll(
-      "[href],[src],[action],[poster]"
+      "[href],[src],[action],[poster],[data-src]"
     )
-    .forEach(el=>{
+    .forEach(el => {
 
-      ["href","src","action","poster"]
-        .forEach(attr=>{
+      [
+        "href",
+        "src",
+        "action",
+        "poster",
+        "data-src"
+      ].forEach(attr => {
 
-          if(!el.hasAttribute(attr))
-            return;
+        if(!el.hasAttribute(attr))
+          return;
 
-          let value =
-            el.getAttribute(attr);
+        const original =
+          el.getAttribute(attr);
 
-          if(!value)
-            return;
+        if(
+          !original ||
+          shouldIgnoreURL(original)
+        )
+          return;
 
-          if(
-            value.startsWith("#") ||
-            value.startsWith("data:") ||
-            value.startsWith("blob:") ||
-            value.startsWith("javascript:")
-          ){
-            return;
-          }
 
-          const absolute =
-            absoluteURL(
-              value,
-              base
-            );
+        /*
+           Fragment-only links remain local.
+        */
 
-          el.setAttribute(
-            attr,
-            proxyURL(absolute)
+        if(
+          original.trim().startsWith("#")
+        )
+          return;
+
+
+        const absolute =
+          absoluteURL(
+            original,
+            base
           );
 
-        });
+
+        /*
+           Links are kept as normal absolute URLs.
+
+           The click interceptor below sends them
+           back through loadURL().
+        */
+
+        el.setAttribute(
+          attr,
+          absolute
+        );
+
+      });
 
     });
 
 
   /*
-    Rewrite images/srcsets.
+     srcset
   */
 
   doc
     .querySelectorAll("[srcset]")
-    .forEach(el=>{
+    .forEach(el => {
 
-      const source =
+      const original =
         el.getAttribute("srcset");
 
-      const result =
-        source
+      const rewritten =
+        original
           .split(",")
-          .map(part=>{
+          .map(item => {
 
-            const bits =
-              part.trim()
-                .split(/\s+/);
+            const parts =
+              item.trim().split(/\s+/);
 
-            if(!bits[0])
-              return part;
+            if(!parts[0])
+              return item;
 
-            const absolute =
-              absoluteURL(
-                bits[0],
-                base
+            if(
+              shouldIgnoreURL(parts[0])
+            )
+              return item;
+
+            parts[0] =
+              makeProxyURL(
+                absoluteURL(
+                  parts[0],
+                  base
+                )
               );
 
-            bits[0] =
-              proxyURL(absolute);
-
-            return bits.join(" ");
+            return parts.join(" ");
 
           })
           .join(", ");
 
       el.setAttribute(
         "srcset",
-        result
+        rewritten
       );
 
     });
 
 
   /*
-    Add a base URL for things that remain relative.
-  */
-
-  let baseElement =
-    doc.querySelector("base");
-
-  if(!baseElement){
-
-    baseElement =
-      doc.createElement("base");
-
-    if(doc.head){
-
-      doc.head.prepend(
-        baseElement
-      );
-
-    }
-
-  }
-
-  if(baseElement){
-
-    baseElement.href =
-      proxyURL(base);
-
-  }
-
-
-  /*
-    Force links to remain inside the proxy page.
+     Inline styles.
   */
 
   doc
-    .querySelectorAll("a")
-    .forEach(link=>{
+    .querySelectorAll("[style]")
+    .forEach(el => {
 
-      link.setAttribute(
-        "target",
-        "_self"
+      const style =
+        el.getAttribute("style");
+
+      el.setAttribute(
+        "style",
+        rewriteCSS(
+          style,
+          base
+        )
+      );
+
+    });
+
+
+  /*
+     Style elements.
+  */
+
+  doc
+    .querySelectorAll("style")
+    .forEach(el => {
+
+      el.textContent =
+        rewriteCSS(
+          el.textContent,
+          base
+        );
+
+    });
+
+
+  /*
+     Stylesheets.
+
+     Instead of allowing the browser to fetch them
+     directly, turn their href into proxy URLs.
+  */
+
+  doc
+    .querySelectorAll(
+      "link[rel='stylesheet'][href]"
+    )
+    .forEach(link => {
+
+      const href =
+        link.getAttribute("href");
+
+      if(
+        shouldIgnoreURL(href)
+      )
+        return;
+
+      const absolute =
+        absoluteURL(
+          href,
+          base
+        );
+
+      link.href =
+        makeProxyURL(
+          absolute
+        );
+
+    });
+
+
+  /*
+     Images/media/resources.
+
+     Route them through the existing proxy.
+  */
+
+  doc
+    .querySelectorAll(
+      "img[src]," +
+      "video[src]," +
+      "audio[src]," +
+      "source[src]," +
+      "track[src]"
+    )
+    .forEach(el => {
+
+      const src =
+        el.getAttribute("src");
+
+      if(
+        shouldIgnoreURL(src)
+      )
+        return;
+
+      const absolute =
+        absoluteURL(
+          src,
+          base
+        );
+
+      el.setAttribute(
+        "src",
+        makeProxyURL(
+          absolute
+        )
+      );
+
+    });
+
+
+  /*
+     Iframes are disabled because loading arbitrary
+     iframe content directly would bypass our loader.
+  */
+
+  doc
+    .querySelectorAll(
+      "iframe,object,embed"
+    )
+    .forEach(el => {
+
+      const src =
+        el.getAttribute("src");
+
+      if(src){
+
+        el.setAttribute(
+          "data-proxy-original-src",
+          absoluteURL(
+            src,
+            base
+          )
+        );
+
+      }
+
+      el.removeAttribute("src");
+
+    });
+
+
+  /*
+     Remove base elements.
+
+     The proxy URLs we inserted above are absolute.
+  */
+
+  doc
+    .querySelectorAll("base")
+    .forEach(el => el.remove());
+
+
+  /*
+     Forms are handled by JavaScript.
+  */
+
+  doc
+    .querySelectorAll("form")
+    .forEach(form => {
+
+      form.setAttribute(
+        "data-proxy-form",
+        "true"
       );
 
     });
@@ -1254,267 +974,511 @@ function rewriteHTML(html,base){
 }
 
 
-/* =========================================================
-   LOAD URL
-========================================================= */
-
-const PROXY = "https://corsproxy.io/?url=";
+/* =====================================================
+   FETCH TARGET
+===================================================== */
 
 async function fetchTarget(url){
 
   showLoading();
-  error.style.display = "none";
+
+  error.style.display =
+    "none";
+
   page.innerHTML = "";
 
-  try {
+
+  try{
 
     const proxyURL =
-      PROXY + encodeURIComponent(url);
+      makeProxyURL(url);
 
-    const response = await fetch(proxyURL, {
-      method: "GET",
-      credentials: "omit"
-    });
 
-    if (!response.ok) {
-      throw new Error(
-        "Proxy returned HTTP " +
-        response.status
+    showStatus(
+      "Fetching through " +
+      PROXY_NAME + "..."
+    );
+
+
+    const response =
+      await fetch(
+        proxyURL,
+        {
+          method:"GET",
+          credentials:"omit",
+          redirect:"follow",
+          cache:"no-store"
+        }
       );
+
+
+    if(!response.ok){
+
+      throw new Error(
+        "Proxy HTTP " +
+        response.status +
+        " " +
+        response.statusText
+      );
+
     }
 
-    const type =
-      response.headers.get("content-type") || "";
 
-    if (
+    const type =
+      (
+        response.headers.get(
+          "content-type"
+        ) || ""
+      ).toLowerCase();
+
+
+    /* ==============================================
+       HTML
+    ============================================== */
+
+    if(
       type.includes("text/html") ||
       type.includes("application/xhtml")
-    ) {
+    ){
 
-      const html = await response.text();
+      const html =
+        await response.text();
 
-      const finalURL =
-        response.url || url;
+
+      const rewritten =
+        rewriteHTML(
+          html,
+          url
+        );
+
+
+      /*
+         Use a DOM document instead of directly
+         allowing scripts from the target.
+      */
 
       page.innerHTML =
-        rewriteHTML(html, url);
+        rewritten;
 
-      currentURL = url;
-      address.value = url;
 
       attachNavigation();
 
-    } else if (type.includes("text/css")) {
+      attachForms();
 
-      const css = await response.text();
+    }
+
+
+    /* ==============================================
+       CSS
+    ============================================== */
+
+    else if(
+      type.includes("text/css")
+    ){
+
+      const css =
+        await response.text();
 
       const style =
-        document.createElement("style");
+        document.createElement(
+          "style"
+        );
 
-      style.textContent = css;
+      style.textContent =
+        rewriteCSS(
+          css,
+          url
+        );
 
-      page.appendChild(style);
+      page.appendChild(
+        style
+      );
 
-      currentURL = url;
-      address.value = url;
+    }
 
-    } else if (type.startsWith("text/")) {
 
-      const text = await response.text();
+    /* ==============================================
+       JSON
+    ============================================== */
+
+    else if(
+      type.includes("json")
+    ){
+
+      const text =
+        await response.text();
 
       const pre =
-        document.createElement("pre");
+        document.createElement(
+          "pre"
+        );
 
-      pre.textContent = text;
-      pre.style.whiteSpace = "pre-wrap";
-      pre.style.padding = "20px";
+      pre.textContent =
+        text;
 
-      page.appendChild(pre);
+      pre.style.whiteSpace =
+        "pre-wrap";
 
-      currentURL = url;
-      address.value = url;
+      pre.style.padding =
+        "25px";
 
-    } else {
+      pre.style.margin =
+        "0";
+
+      pre.style.fontFamily =
+        "monospace";
+
+      page.appendChild(
+        pre
+      );
+
+    }
+
+
+    /* ==============================================
+       TEXT
+    ============================================== */
+
+    else if(
+      type.startsWith("text/")
+    ){
+
+      const text =
+        await response.text();
+
+      const pre =
+        document.createElement(
+          "pre"
+        );
+
+      pre.textContent =
+        text;
+
+      pre.style.whiteSpace =
+        "pre-wrap";
+
+      pre.style.padding =
+        "25px";
+
+      page.appendChild(
+        pre
+      );
+
+    }
+
+
+    /* ==============================================
+       IMAGE
+    ============================================== */
+
+    else if(
+      type.startsWith("image/")
+    ){
 
       const blob =
         await response.blob();
 
       const objectURL =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+          blob
+        );
 
-      const iframe =
-        document.createElement("iframe");
+      const img =
+        document.createElement(
+          "img"
+        );
 
-      iframe.src = objectURL;
+      img.src =
+        objectURL;
 
-      iframe.style.width = "100%";
-      iframe.style.height = "100%";
-      iframe.style.border = "0";
+      img.style.maxWidth =
+        "100%";
 
-      page.appendChild(iframe);
+      img.style.display =
+        "block";
 
-      currentURL = url;
-      address.value = url;
+      img.style.margin =
+        "20px auto";
+
+      page.appendChild(
+        img
+      );
+
     }
 
-    home.style.display = "none";
-    hideLoading();
 
-    showStatus("Loaded through proxy");
+    /* ==============================================
+       OTHER
+    ============================================== */
 
-  } catch (err) {
+    else{
 
-    hideLoading();
+      /*
+         For PDFs and other files, create a blob URL
+         and display it where the browser supports it.
+      */
 
-    page.innerHTML = "";
+      const blob =
+        await response.blob();
 
-    error.style.display = "flex";
+      const objectURL =
+        URL.createObjectURL(
+          blob
+        );
 
-    errortext.textContent =
-      "The proxy could not load this destination.\n\n" +
-      err.message;
+      const iframe =
+        document.createElement(
+          "iframe"
+        );
 
-  }
-}
-  
-  currentURL =
-      response.url || url;
+      iframe.src =
+        objectURL;
+
+      iframe.style.width =
+        "100%";
+
+      iframe.style.height =
+        "100%";
+
+      iframe.style.border =
+        "0";
+
+      page.appendChild(
+        iframe
+      );
+
+    }
+
+
+    currentURL =
+      url;
 
     address.value =
-      currentURL;
+      url;
 
     document.title =
-      getHostname(currentURL) ||
-      "Interstellar";
+      getHostname(url);
 
-    showWebPage();
+
+    home.style.display =
+      "none";
+
 
     hideLoading();
 
-    showStatus("Loaded");
-
-    addHistory(currentURL);
-
-    saveCurrentTab();
+    showStatus(
+      "Loaded"
+    );
 
   }
   catch(err){
 
     hideLoading();
 
-    webpage.innerHTML =
-      "";
+    page.innerHTML = "";
+
+    lastErrorURL =
+      url;
 
     error.style.display =
       "flex";
 
     errortext.textContent =
-      "The proxy could not load this destination. " +
-      "The target may block proxy requests, require " +
-      "JavaScript/WebSockets, or the configured proxy " +
-      "may be unavailable.\n\n" +
-      err.message;
+      "The destination could not be loaded through " +
+      PROXY_NAME +
+      ".\n\n" +
+      "URL: " +
+      url +
+      "\n\n" +
+      "Error: " +
+      err.message +
+      "\n\n" +
+      "The destination may require JavaScript, WebSockets, " +
+      "authentication, cookies, or may be blocked by the " +
+      "proxy service.";
 
   }
 
 }
 
 
-/* =========================================================
-   NAVIGATION INTERCEPTION
-========================================================= */
+/* =====================================================
+   HOSTNAME
+===================================================== */
+
+function getHostname(url){
+
+  try{
+
+    return new URL(
+      url
+    ).hostname;
+
+  }catch{
+
+    return "Web";
+
+  }
+
+}
+
+
+/* =====================================================
+   LINK NAVIGATION
+===================================================== */
 
 function attachNavigation(){
 
   page
-    .querySelectorAll("a[href]")
+    .querySelectorAll(
+      "a[href]"
+    )
     .forEach(link => {
 
-      link.addEventListener("click", event => {
+      link.addEventListener(
+        "click",
+        event => {
 
-        const href =
-          link.getAttribute("href");
+          const href =
+            link.getAttribute(
+              "href"
+            );
 
-        if (
-          !href ||
-          href.startsWith("#") ||
-          href.startsWith("javascript:")
-        ) {
-          return;
-        }
+          if(
+            !href ||
+            href.startsWith("#") ||
+            href.startsWith("javascript:") ||
+            href.startsWith("mailto:") ||
+            href.startsWith("tel:")
+          ){
 
-        event.preventDefault();
+            return;
 
-        const target =
-          proxiedURL(
-            href,
-            currentURL
+          }
+
+
+          event.preventDefault();
+
+
+          const target =
+            absoluteURL(
+              href,
+              currentURL
+            );
+
+
+          loadURL(
+            target
           );
 
-        loadURL(target);
+        }
+      );
 
-      });
+    });
+
+
+  /*
+     Handle buttons/links that use target="_blank".
+  */
+
+  page
+    .querySelectorAll(
+      "a[target]"
+    )
+    .forEach(link => {
+
+      link.removeAttribute(
+        "target"
+      );
 
     });
 
 }
 
 
-  /*
-    Intercept forms.
+/* =====================================================
+   FORM HANDLING
+===================================================== */
 
-    GET forms can be converted into URL requests.
-  */
+function attachForms(){
 
-  webpage
-    .querySelectorAll("form")
-    .forEach(form=>{
+  page
+    .querySelectorAll(
+      "form[data-proxy-form]"
+    )
+    .forEach(form => {
 
       form.addEventListener(
         "submit",
-        event=>{
+        event => {
 
           event.preventDefault();
 
+
           const method =
             (
-              form.method ||
-              "GET"
+              form.getAttribute(
+                "method"
+              ) || "GET"
             ).toUpperCase();
+
+
+          const action =
+            form.getAttribute(
+              "action"
+            ) || currentURL;
+
+
+          const target =
+            absoluteURL(
+              action,
+              currentURL
+            );
+
+
+          /*
+             Static client proxy supports GET forms
+             reliably.
+          */
 
           if(method !== "GET"){
 
             showStatus(
-              "POST forms are not supported by this static proxy"
+              "POST forms are not supported by this client proxy"
             );
 
             return;
 
           }
 
-          const action =
-            absoluteURL(
-              form.getAttribute("action") ||
-              currentURL,
-              currentURL
-            );
 
           const data =
-            new FormData(form);
+            new FormData(
+              form
+            );
+
 
           const params =
-            new URLSearchParams(data);
+            new URLSearchParams(
+              data
+            );
+
+
+          const separator =
+            target.includes("?")
+              ? "&"
+              : "?";
+
 
           const finalURL =
-            action +
-            (
-              action.includes("?")
-                ? "&"
-                : "?"
-            ) +
+            target +
+            separator +
             params.toString();
 
-          loadURL(finalURL);
+
+          loadURL(
+            finalURL
+          );
 
         }
       );
@@ -1524,82 +1488,69 @@ function attachNavigation(){
 }
 
 
-/* =========================================================
-   SHOW HOME / WEB
-========================================================= */
+/* =====================================================
+   HISTORY
+===================================================== */
 
-function showHome(){
+function addHistory(url){
 
-  home.style.display =
-    "block";
+  if(
+    historyPosition >= 0 &&
+    historyList[
+      historyPosition
+    ] === url
+  ){
 
-  webpage.style.display =
-    "none";
+    return;
 
-  favoritesPage.style.display =
-    "none";
+  }
 
-  historyPage.style.display =
-    "none";
 
-  settingsPage.style.display =
-    "none";
+  historyList =
+    historyList.slice(
+      0,
+      historyPosition + 1
+    );
 
-}
 
-function showWebPage(){
+  historyList.push(
+    url
+  );
 
-  home.style.display =
-    "none";
 
-  webpage.style.display =
-    "block";
-
-  favoritesPage.style.display =
-    "none";
-
-  historyPage.style.display =
-    "none";
-
-  settingsPage.style.display =
-    "none";
-
-}
-
-function showPanel(panel){
-
-  home.style.display =
-    "none";
-
-  webpage.style.display =
-    "none";
-
-  favoritesPage.style.display =
-    "none";
-
-  historyPage.style.display =
-    "none";
-
-  settingsPage.style.display =
-    "none";
-
-  panel.style.display =
-    "block";
+  historyPosition =
+    historyList.length - 1;
 
 }
 
 
-/* =========================================================
+/* =====================================================
    LOAD URL
-========================================================= */
+===================================================== */
 
-function loadURL(value){
+function loadURL(
+  value,
+  record = true
+){
 
   const url =
-    normalizeURL(value);
+    normalizeURL(
+      value
+    );
+
 
   if(!url)
     return;
+
+
+  if(record){
+
+    addHistory(
+      url
+    );
+
+  }
+
 
   currentURL =
     url;
@@ -1607,233 +1558,90 @@ function loadURL(value){
   address.value =
     url;
 
-  addHistory(url);
 
-  fetchTarget(url);
-
-}
-
-
-/* =========================================================
-   HISTORY
-========================================================= */
-
-function addHistory(url){
-
-  historyList =
-    historyList.filter(
-      item=>item !== url
-    );
-
-  historyList.unshift(url);
-
-  historyList =
-    historyList.slice(
-      0,
-      100
-    );
-
-  localStorage.setItem(
-    "interstellarHistory",
-    JSON.stringify(historyList)
+  fetchTarget(
+    url
   );
 
-  renderHistory();
-
 }
 
 
-/* =========================================================
-   RENDER HISTORY
-========================================================= */
-
-function renderHistory(){
-
-  const list =
-    document.getElementById(
-      "historyList"
-    );
-
-  if(!historyList.length){
-
-    list.textContent =
-      "No history yet.";
-
-    return;
-
-  }
-
-  list.innerHTML = "";
-
-  historyList.forEach(url=>{
-
-    const button =
-      document.createElement("button");
-
-    button.textContent =
-      url;
-
-    button.style.display =
-      "block";
-
-    button.style.width =
-      "100%";
-
-    button.style.textAlign =
-      "left";
-
-    button.onclick = ()=>{
-      loadURL(url);
-    };
-
-    list.appendChild(button);
-
-  });
-
-}
-
-renderHistory();
-
-
-/* =========================================================
-   FAVORITES
-========================================================= */
-
-function toggleFavorite(){
-
-  if(!currentURL)
-    return;
-
-  if(
-    favorites.includes(currentURL)
-  ){
-
-    favorites =
-      favorites.filter(
-        x=>x !== currentURL
-      );
-
-    showStatus(
-      "Removed from favorites"
-    );
-
-  }
-  else{
-
-    favorites.push(
-      currentURL
-    );
-
-    showStatus(
-      "Added to favorites"
-    );
-
-  }
-
-  localStorage.setItem(
-    "interstellarFavorites",
-    JSON.stringify(favorites)
-  );
-
-  renderFavorites();
-
-}
-
-
-/* =========================================================
-   RENDER FAVORITES
-========================================================= */
-
-function renderFavorites(){
-
-  const list =
-    document.getElementById(
-      "favoritesList"
-    );
-
-  if(!favorites.length){
-
-    list.textContent =
-      "No favorites yet.";
-
-    return;
-
-  }
-
-  list.innerHTML = "";
-
-  favorites.forEach(url=>{
-
-    const button =
-      document.createElement("button");
-
-    button.textContent =
-      url;
-
-    button.style.display =
-      "block";
-
-    button.style.width =
-      "100%";
-
-    button.style.textAlign =
-      "left";
-
-    button.onclick = ()=>{
-      loadURL(url);
-    };
-
-    list.appendChild(button);
-
-  });
-
-}
-
-renderFavorites();
-
-
-/* =========================================================
-   BACK / FORWARD
-========================================================= */
+/* =====================================================
+   BACK
+===================================================== */
 
 document
   .getElementById("back")
-  .onclick = ()=>{
+  .onclick = () => {
 
     if(
-      window.history.length > 1
+      historyPosition <= 0
     ){
-
-      window.history.back();
-
-    }
-    else{
 
       showStatus(
         "No previous page"
       );
 
+      return;
+
     }
+
+
+    historyPosition--;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
 
   };
 
+
+/* =====================================================
+   FORWARD
+===================================================== */
 
 document
   .getElementById("forward")
-  .onclick = ()=>{
+  .onclick = () => {
 
-    window.history.forward();
+    if(
+      historyPosition >=
+      historyList.length - 1
+    ){
+
+      showStatus(
+        "No next page"
+      );
+
+      return;
+
+    }
+
+
+    historyPosition++;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
 
   };
 
 
-/* =========================================================
+/* =====================================================
    RELOAD
-========================================================= */
+===================================================== */
 
 document
   .getElementById("reload")
-  .onclick = ()=>{
+  .onclick = () => {
 
     if(currentURL){
 
@@ -1842,33 +1650,34 @@ document
       );
 
     }
-    else{
-
-      showStatus(
-        "Nothing to reload"
-      );
-
-    }
 
   };
 
 
-/* =========================================================
-   ADDRESS BAR
-========================================================= */
+/* =====================================================
+   GO
+===================================================== */
 
 document
   .getElementById("go")
-  .onclick = ()=>{
-    loadURL(address.value);
+  .onclick = () => {
+
+    loadURL(
+      address.value
+    );
+
   };
 
 
 address.addEventListener(
   "keydown",
-  event=>{
+  event => {
 
-    if(event.key === "Enter"){
+    if(
+      event.key === "Enter"
+    ){
+
+      event.preventDefault();
 
       loadURL(
         address.value
@@ -1880,18 +1689,22 @@ address.addEventListener(
 );
 
 
-/* =========================================================
-   HOME SEARCH
-========================================================= */
+/* =====================================================
+   HOME INPUT
+===================================================== */
 
-homeSearch.addEventListener(
+homeinput.addEventListener(
   "keydown",
-  event=>{
+  event => {
 
-    if(event.key === "Enter"){
+    if(
+      event.key === "Enter"
+    ){
+
+      event.preventDefault();
 
       loadURL(
-        homeSearch.value
+        homeinput.value
       );
 
     }
@@ -1900,18 +1713,18 @@ homeSearch.addEventListener(
 );
 
 
-/* =========================================================
+/* =====================================================
    RETRY
-========================================================= */
+===================================================== */
 
 document
   .getElementById("retry")
-  .onclick = ()=>{
+  .onclick = () => {
 
-    if(currentURL){
+    if(lastErrorURL){
 
       fetchTarget(
-        currentURL
+        lastErrorURL
       );
 
     }
@@ -1919,37 +1732,29 @@ document
   };
 
 
-document
-  .getElementById("errorHome")
-  .onclick = ()=>{
-
-    error.style.display =
-      "none";
-
-    showHome();
-
-  };
-
-
-/* =========================================================
+/* =====================================================
    FULLSCREEN
-========================================================= */
+===================================================== */
 
 document
   .getElementById("fullscreen")
-  .onclick = async()=>{
+  .onclick = async () => {
 
     try{
 
-      if(!document.fullscreenElement){
+      if(
+        !document.fullscreenElement
+      ){
 
-        await document.documentElement
+        await document
+          .documentElement
           .requestFullscreen();
 
       }
       else{
 
-        await document.exitFullscreen();
+        await document
+          .exitFullscreen();
 
       }
 
@@ -1965,143 +1770,73 @@ document
   };
 
 
-/* =========================================================
+/* =====================================================
    CLOAK
-========================================================= */
-
-function cloak(){
-
-  document.title =
-    "Google";
-
-  let icon =
-    document.querySelector(
-      "link[rel='icon']"
-    );
-
-  if(!icon){
-
-    icon =
-      document.createElement("link");
-
-    icon.rel =
-      "icon";
-
-    document.head.appendChild(
-      icon
-    );
-
-  }
-
-  icon.href =
-    "data:image/svg+xml," +
-    encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg"
-           viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="30"
-                fill="white"/>
-        <path d="M32 10a22 22 0 1 0 22 22H32z"
-              fill="#4285f4"/>
-      </svg>
-    `);
-
-  showStatus(
-    "Cloaked"
-  );
-
-}
-
+===================================================== */
 
 document
   .getElementById("cloak")
-  .onclick =
-  cloak;
+  .onclick = () => {
 
-document
-  .getElementById("cloakSetting")
-  .onclick =
-  cloak;
+    document.title =
+      "Google";
 
 
-/* =========================================================
-   SETTINGS
-========================================================= */
-
-const searchEngine =
-  document.getElementById(
-    "searchEngine"
-  );
-
-searchEngine.value =
-  localStorage.getItem(
-    "interstellarSearchEngine"
-  ) || "google";
+    let icon =
+      document.querySelector(
+        "link[rel='icon']"
+      );
 
 
-searchEngine.onchange = ()=>{
+    if(!icon){
 
-  localStorage.setItem(
-    "interstellarSearchEngine",
-    searchEngine.value
-  );
+      icon =
+        document.createElement(
+          "link"
+        );
 
-  showStatus(
-    "Search engine updated"
-  );
+      icon.rel =
+        "icon";
 
-};
+      document.head.appendChild(
+        icon
+      );
+
+    }
 
 
-document
-  .getElementById("clearHistory")
-  .onclick = ()=>{
+    icon.href =
+      "data:image/svg+xml," +
+      encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="30"
+        fill="white"/>
+        <path d="M32 10a22 22 0 1 0 22 22H32z"
+        fill="#4285f4"/>
+        </svg>`
+      );
 
-    historyList = [];
-
-    localStorage.removeItem(
-      "interstellarHistory"
-    );
-
-    renderHistory();
 
     showStatus(
-      "History cleared"
+      "Cloaked"
     );
 
   };
 
 
-document
-  .getElementById("resetSettings")
-  .onclick = ()=>{
-
-    localStorage.removeItem(
-      "interstellarSearchEngine"
-    );
-
-    searchEngine.value =
-      "google";
-
-    showStatus(
-      "Settings reset"
-    );
-
-  };
-
-
-document
-  .getElementById("proxyDisplay")
-  .textContent =
-  PROXY_PREFIX;
-
-
-/* =========================================================
+/* =====================================================
    KEYBOARD SHORTCUTS
-========================================================= */
+===================================================== */
 
 document.addEventListener(
   "keydown",
-  event=>{
+  event => {
+
+
+    /*
+       Ctrl + L
+    */
 
     if(
       event.ctrlKey &&
@@ -2111,426 +1846,55 @@ document.addEventListener(
       event.preventDefault();
 
       address.focus();
+
       address.select();
 
     }
 
+
+    /*
+       Alt + Left
+    */
+
     if(
-      event.ctrlKey &&
-      event.key.toLowerCase() === "d"
+      event.altKey &&
+      event.key === "ArrowLeft"
     ){
 
       event.preventDefault();
 
-      toggleFavorite();
+      document
+        .getElementById("back")
+        .click();
 
     }
 
+
+    /*
+       Alt + Right
+    */
+
     if(
-      event.ctrlKey &&
-      event.key.toLowerCase() === "h"
+      event.altKey &&
+      event.key === "ArrowRight"
     ){
 
       event.preventDefault();
 
-      showPanel(
-        historyPage
-      );
+      document
+        .getElementById("forward")
+        .click();
 
     }
 
-    if(
-      event.ctrlKey &&
-      event.key.toLowerCase() === "j"
-    ){
-
-      event.preventDefault();
-
-      showPanel(
-        favoritesPage
-      );
-
-    }
-
-    if(
-      event.ctrlKey &&
-      event.key.toLowerCase() === "k"
-    ){
-
-      event.preventDefault();
-
-      showPanel(
-        settingsPage
-      );
-
-    }
-
-    if(
-      event.key === "Escape"
-    ){
-
-      showHome();
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   SIMPLE TABS
-========================================================= */
-
-function createTab(url=""){
-
-  const id =
-    Date.now().toString(36) +
-    Math.random().toString(36)
-      .slice(2);
-
-  const tab =
-    document.createElement("div");
-
-  tab.className =
-    "tab";
-
-  tab.dataset.id =
-    id;
-
-  tab.innerHTML = `
-    <span class="tab-title">New Tab</span>
-    <button class="tab-close">×</button>
-  `;
-
-  const title =
-    tab.querySelector(
-      ".tab-title"
-    );
-
-  const close =
-    tab.querySelector(
-      ".tab-close"
-    );
-
-  title.onclick = ()=>{
-    activateTab(id);
-  };
-
-  close.onclick = event=>{
-
-    event.stopPropagation();
-
-    closeTab(id);
-
-  };
-
-  tabs.insertBefore(
-    tab,
-    document.getElementById(
-      "newtab"
-    )
-  );
-
-  tabsData.push({
-    id:id,
-    url:url,
-    title:"New Tab"
   });
 
-  activateTab(id);
 
-  if(url){
-    loadURL(url);
-  }
-
-}
-
-
-function activateTab(id){
-
-  activeTab =
-    id;
-
-  document
-    .querySelectorAll(".tab")
-    .forEach(tab=>{
-
-      tab.classList.toggle(
-        "active",
-        tab.dataset.id === id
-      );
-
-    });
-
-  const data =
-    tabsData.find(
-      t=>t.id === id
-    );
-
-  if(data){
-
-    address.value =
-      data.url || "";
-
-  }
-
-}
-
-
-function closeTab(id){
-
-  const index =
-    tabsData.findIndex(
-      t=>t.id === id
-    );
-
-  if(index === -1)
-    return;
-
-  tabsData.splice(
-    index,
-    1
-  );
-
-  const tab =
-    document.querySelector(
-      `.tab[data-id="${id}"]`
-    );
-
-  if(tab)
-    tab.remove();
-
-  if(!tabsData.length){
-
-    createTab();
-
-    return;
-
-  }
-
-  if(activeTab === id){
-
-    const next =
-      tabsData[
-        Math.max(
-          0,
-          index - 1
-        )
-      ];
-
-    activateTab(
-      next.id
-    );
-
-    if(next.url){
-
-      loadURL(
-        next.url
-      );
-
-    }
-    else{
-
-      showHome();
-
-    }
-
-  }
-
-}
-
-
-function saveCurrentTab(){
-
-  if(!activeTab)
-    return;
-
-  const data =
-    tabsData.find(
-      t=>t.id === activeTab
-    );
-
-  if(!data)
-    return;
-
-  data.url =
-    currentURL;
-
-  data.title =
-    getHostname(
-      currentURL
-    );
-
-  const tab =
-    document.querySelector(
-      `.tab[data-id="${activeTab}"]`
-    );
-
-  if(tab){
-
-    const title =
-      tab.querySelector(
-        ".tab-title"
-      );
-
-    title.textContent =
-      data.title ||
-      "New Tab";
-
-  }
-
-}
-
-
-/* =========================================================
-   NEW TAB
-========================================================= */
-
-document
-  .getElementById("newtab")
-  .onclick = ()=>{
-    createTab();
-  };
-
-
-/* =========================================================
-   HOME NAVIGATION BUTTONS
-========================================================= */
-
-document.addEventListener(
-  "click",
-  event=>{
-
-    const target =
-      event.target.closest(
-        "[data-action]"
-      );
-
-    if(!target)
-      return;
-
-    const action =
-      target.dataset.action;
-
-    if(action === "home"){
-      showHome();
-    }
-
-    if(action === "favorites"){
-      showPanel(
-        favoritesPage
-      );
-    }
-
-    if(action === "history"){
-      showPanel(
-        historyPage
-      );
-    }
-
-    if(action === "settings"){
-      showPanel(
-        settingsPage
-      );
-    }
-
-  }
-);
-
-
-/* =========================================================
-   ADD QUICK ACTIONS TO HOME
-========================================================= */
-
-const homeInner =
-  document.querySelector(
-    ".home-inner"
-  );
-
-const actionSection =
-  document.createElement("div");
-
-actionSection.className =
-  "section";
-
-actionSection.innerHTML = `
-  <div class="section-head">
-    <h2>Browser</h2>
-    <span>Tools</span>
-  </div>
-
-  <div class="cards">
-
-    <div class="card" data-action="home">
-      <div class="card-icon">🏠</div>
-      <div class="card-name">Home</div>
-      <div class="card-desc">Return home</div>
-    </div>
-
-    <div class="card" data-action="favorites">
-      <div class="card-icon">⭐</div>
-      <div class="card-name">Favorites</div>
-      <div class="card-desc">Saved websites</div>
-    </div>
-
-    <div class="card" data-action="history">
-      <div class="card-icon">🕘</div>
-      <div class="card-name">History</div>
-      <div class="card-desc">Recent websites</div>
-    </div>
-
-    <div class="card" data-action="settings">
-      <div class="card-icon">⚙️</div>
-      <div class="card-name">Settings</div>
-      <div class="card-desc">Browser settings</div>
-    </div>
-
-    <div class="card" onclick="toggleFavorite()">
-      <div class="card-icon">⭐</div>
-      <div class="card-name">Favorite Page</div>
-      <div class="card-desc">Save current page</div>
-    </div>
-
-  </div>
-`;
-
-homeInner.appendChild(
-  actionSection
-);
-
-
-/* =========================================================
-   HOSTNAME
-========================================================= */
-
-function getHostname(url){
-
-  try{
-
-    return new URL(url).hostname;
-
-  }
-  catch{
-
-    return "";
-
-  }
-
-}
-
-
-/* =========================================================
-   INITIAL TAB
-========================================================= */
-
-createTab();
-
-
-/* =========================================================
+/* =====================================================
    INITIAL STATE
-========================================================= */
+===================================================== */
 
-showHome();
+homeinput.focus();
 
 </script>
 
