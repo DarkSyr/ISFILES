@@ -78,11 +78,7 @@ button:hover{
   position:absolute;
   inset:58px 0 0;
   background:
-    radial-gradient(
-      circle at center,
-      #202020,
-      #080808 65%
-    );
+    radial-gradient(circle at center,#202020,#080808 65%);
   display:flex;
   justify-content:center;
   align-items:center;
@@ -136,9 +132,7 @@ button:hover{
 }
 
 @keyframes spin{
-  to{
-    transform:rotate(360deg)
-  }
+  to{transform:rotate(360deg)}
 }
 
 #error{
@@ -191,126 +185,114 @@ button:hover{
 
 <div id="bar">
 
-<button id="back" title="Back">←</button>
-
-<button id="forward" title="Forward">→</button>
-
-<button id="reload" title="Reload">↻</button>
+<button id="back">←</button>
+<button id="forward">→</button>
+<button id="reload">↻</button>
 
 <input
-  id="address"
-  placeholder="Enter URL or search..."
-  autocomplete="off"
-  spellcheck="false"
+ id="address"
+ placeholder="Enter URL or search..."
+ autocomplete="off"
+ spellcheck="false"
 >
 
 <button id="go">Go</button>
-
-<button id="cloak" title="Cloak">◉</button>
-
-<button id="fullscreen" title="Fullscreen">⛶</button>
+<button id="cloak">◉</button>
+<button id="fullscreen">⛶</button>
 
 </div>
 
-
 <iframe
-  id="page"
-  allow="
-    fullscreen;
-    autoplay;
-    clipboard-read;
-    clipboard-write;
-    camera;
-    microphone;
-    geolocation;
-    payment
-  "
-  referrerpolicy="no-referrer"
-  allowfullscreen>
+ id="page"
+ allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+ referrerpolicy="no-referrer">
 </iframe>
-
 
 <div id="home">
 
-  <div id="homebox">
+<div id="homebox">
 
-    <h1>Web</h1>
+<h1>Web</h1>
 
-    <p>Scramjet Web Proxy</p>
+<p>Ultraviolet Web Proxy</p>
 
-    <input
-      id="homeinput"
-      placeholder="https://example.com"
-      autocomplete="off"
-    >
-
-  </div>
+<input
+ id="homeinput"
+ placeholder="https://example.com"
+ autocomplete="off"
+>
 
 </div>
 
+</div>
 
 <div id="loading">
-  <div class="spinner"></div>
+<div class="spinner"></div>
 </div>
-
 
 <div id="error">
 
-  <div id="errorbox">
+<div id="errorbox">
 
-    <h2>Could not load this website</h2>
+<h2>Could not load this website</h2>
 
-    <p id="errortext"></p>
+<p id="errortext"></p>
 
-    <button id="retry">
-      Retry
-    </button>
-
-  </div>
+<button id="retry">Retry</button>
 
 </div>
 
+</div>
 
 <div id="status"></div>
 
 
-<script type="module">
+<!-- =====================================================
+     ULTRAVIOLET
+     ALL PATHS ARE RELATIVE TO /p/K0MN968P/
+====================================================== -->
 
+<script src="./uv.bundle.js"></script>
+<script src="./uv.config.js"></script>
+<script src="./uv.handler.js"></script>
+
+
+<script>
 "use strict";
 
 
-/* =========================================================
+/* =====================================================
    ELEMENTS
-========================================================= */
+===================================================== */
 
 const page =
-  document.getElementById("page");
+    document.getElementById("page");
 
 const address =
-  document.getElementById("address");
+    document.getElementById("address");
 
 const home =
-  document.getElementById("home");
+    document.getElementById("home");
 
 const homeinput =
-  document.getElementById("homeinput");
+    document.getElementById("homeinput");
 
 const loading =
-  document.getElementById("loading");
+    document.getElementById("loading");
 
 const error =
-  document.getElementById("error");
+    document.getElementById("error");
 
 const errortext =
-  document.getElementById("errortext");
+    document.getElementById("errortext");
 
 const status =
-  document.getElementById("status");
+    document.getElementById("status");
 
 
-/* =========================================================
+/* =====================================================
    STATE
-========================================================= */
+===================================================== */
 
 let currentURL = "";
 
@@ -318,543 +300,548 @@ let historyList = [];
 
 let historyPosition = -1;
 
-let scramjet = null;
 
-let scramjetFrame = null;
-
-
-/* =========================================================
+/* =====================================================
    STATUS
-========================================================= */
+===================================================== */
 
 function showStatus(text){
 
-  status.textContent = text;
+    status.textContent = text;
 
-  status.style.display = "block";
+    status.style.display = "block";
 
-  clearTimeout(status.timer);
+    clearTimeout(status.timer);
 
-  status.timer =
-    setTimeout(() => {
+    status.timer = setTimeout(() => {
 
-      status.style.display =
-        "none";
+        status.style.display = "none";
 
-    }, 2200);
-
+    },1800);
 }
 
 
-/* =========================================================
+/* =====================================================
    LOADING
-========================================================= */
+===================================================== */
 
 function showLoading(){
 
-  loading.style.display =
-    "flex";
+    loading.style.display = "flex";
 
 }
 
 function hideLoading(){
 
-  loading.style.display =
-    "none";
+    loading.style.display = "none";
 
 }
 
 
-/* =========================================================
+/* =====================================================
    ERROR
-========================================================= */
+===================================================== */
 
 function showError(message){
 
-  hideLoading();
+    hideLoading();
 
-  error.style.display =
-    "flex";
+    error.style.display = "flex";
 
-  errortext.textContent =
-    message;
+    errortext.textContent = message;
 
 }
 
 
-/* =========================================================
-   URL
-========================================================= */
+/* =====================================================
+   NORMALIZE URL
+===================================================== */
 
 function normalizeURL(value){
 
-  value =
-    String(value || "")
-      .trim();
-
-  if(!value)
-    return null;
-
-
-  if(
-    value.startsWith("http://") ||
-    value.startsWith("https://")
-  ){
-
-    return value;
-
-  }
-
-
-  if(
-    !value.includes(" ") &&
-    value.includes(".")
-  ){
-
-    return "https://" +
-      value;
-
-  }
-
-
-  return (
-    "https://www.google.com/search?q=" +
-    encodeURIComponent(value)
-  );
-
-}
-
-
-/* =========================================================
-   HISTORY
-========================================================= */
-
-function addHistory(url){
-
-  if(
-    historyPosition >= 0 &&
-    historyList[
-      historyPosition
-    ] === url
-  ){
-
-    return;
-
-  }
-
-
-  historyList =
-    historyList.slice(
-      0,
-      historyPosition + 1
-    );
-
-
-  historyList.push(url);
-
-
-  historyPosition =
-    historyList.length - 1;
-
-}
-
-
-/* =========================================================
-   SERVICE WORKER
-========================================================= */
-
-async function registerServiceWorker(){
-
-  if(
-    !("serviceWorker" in navigator)
-  ){
-
-    throw new Error(
-      "This browser does not support Service Workers."
-    );
-
-  }
-
-
-  /*
-   * IMPORTANT:
-   *
-   * "./sw.js" is deliberately relative.
-   *
-   * If this page is:
-   *
-   * /p/HG66NK2B/
-   *
-   * the browser requests:
-   *
-   * /p/HG66NK2B/sw.js
-   */
-
-  const registration =
-    await navigator.serviceWorker.register(
-      "./sw.js",
-      {
-        scope: "./"
-      }
-    );
-
-
-  /*
-   * Wait for installation.
-   */
-
-  await navigator.serviceWorker.ready;
-
-
-  /*
-   * The newly installed worker may not
-   * control this page until controllerchange.
-   */
-
-  if(
-    !navigator.serviceWorker.controller
-  ){
-
-    await new Promise(
-      resolve => {
-
-        const timeout =
-          setTimeout(
-            resolve,
-            10000
-          );
-
-        navigator.serviceWorker
-          .addEventListener(
-            "controllerchange",
-            () => {
-
-              clearTimeout(
-                timeout
-              );
-
-              resolve();
-
-            },
-            {
-              once:true
-            }
-          );
-
-      }
-    );
-
-  }
-
-
-  return registration;
-
-}
-
-
-/* =========================================================
-   SCRAMJET INITIALIZATION
-========================================================= */
-
-async function initializeScramjet(){
-
-  if(scramjet)
-    return scramjet;
-
-
-  showStatus(
-    "Starting Scramjet..."
-  );
-
-
-  /*
-   * Your Scramjet controller build needs
-   * to be available locally.
-   *
-   * Example:
-   *
-   * ./scramjet/controller.js
-   */
-
-  const controllerModule =
-    await import(
-      "./scramjet/controller.js"
-    );
-
-
-  const Controller =
-    controllerModule.Controller;
-
-
-  if(
-    typeof Controller !==
-    "function"
-  ){
-
-    throw new Error(
-      "Scramjet Controller was not found."
-    );
-
-  }
-
-
-  /*
-   * Start the service worker first.
-   */
-
-  await registerServiceWorker();
-
-
-  /*
-   * The transport must be supplied by
-   * your Scramjet deployment.
-   */
-
-  let transport;
-
-
-  try{
-
-    const transportModule =
-      await import(
-        "./scramjet/transport.js"
-      );
+    value =
+        String(value || "").trim();
+
+    if(!value)
+        return null;
 
 
     if(
-      transportModule.ProxyTransport
+        value.startsWith("http://") ||
+        value.startsWith("https://")
     ){
 
-      transport =
-        new transportModule.ProxyTransport();
+        return value;
 
     }
 
-  }catch(e){
 
-    console.warn(
-      "Transport module unavailable:",
-      e
+    if(
+        !value.includes(" ") &&
+        value.includes(".")
+    ){
+
+        return "https://" + value;
+
+    }
+
+
+    return (
+        "https://www.google.com/search?q=" +
+        encodeURIComponent(value)
     );
-
-  }
-
-
-  /*
-   * Create controller.
-   */
-
-  if(transport){
-
-    scramjet =
-      new Controller({
-        transport
-      });
-
-  }else{
-
-    scramjet =
-      new Controller();
-
-  }
-
-
-  /*
-   * Wait until initialized.
-   */
-
-  if(
-    typeof scramjet.init ===
-    "function"
-  ){
-
-    await scramjet.init();
-
-  }
-
-
-  return scramjet;
 
 }
 
 
-/* =========================================================
-   LOAD
-========================================================= */
+/* =====================================================
+   HISTORY
+===================================================== */
 
-async function loadURL(
-  value,
-  record = true
-){
+function addHistory(url){
 
-  const url =
-    normalizeURL(value);
+    if(
+        historyPosition >= 0 &&
+        historyList[historyPosition] === url
+    ){
 
-  if(!url)
-    return;
+        return;
 
-
-  showLoading();
-
-  error.style.display =
-    "none";
+    }
 
 
-  if(record){
-
-    addHistory(url);
-
-  }
-
-
-  currentURL =
-    url;
-
-  address.value =
-    url;
-
-  home.style.display =
-    "none";
+    historyList =
+        historyList.slice(
+            0,
+            historyPosition + 1
+        );
 
 
-  try{
-
-    document.title =
-      "Web — " +
-      new URL(url).hostname;
-
-  }catch{
-
-    document.title =
-      "Web";
-
-  }
+    historyList.push(url);
 
 
-  try{
+    historyPosition =
+        historyList.length - 1;
 
-    const controller =
-      await initializeScramjet();
+}
+
+
+/* =====================================================
+   UV PATHS
+=====================================================
+
+   Because this page is:
+
+   /p/K0MN968P/index.html
+
+   these become:
+
+   /p/K0MN968P/uv.sw.js
+   /p/K0MN968P/uv.config.js
+   /p/K0MN968P/uv.bundle.js
+   /p/K0MN968P/uv.handler.js
+
+===================================================== */
+
+const BASE =
+    new URL("./", location.href);
+
+
+const UV_SW =
+    new URL(
+        "./uv.sw.js",
+        BASE
+    );
+
+
+const UV_SCOPE =
+    new URL(
+        "./service/",
+        BASE
+    );
+
+
+/* =====================================================
+   REGISTER UV SERVICE WORKER
+===================================================== */
+
+async function registerUV(){
+
+    if(!("serviceWorker" in navigator)){
+
+        throw new Error(
+            "Service Workers are not supported by this browser."
+        );
+
+    }
 
 
     showStatus(
-      "Creating proxy frame..."
+        "Starting Ultraviolet..."
     );
 
 
     /*
-     * Current Scramjet uses a Frame
-     * rather than manually calling
-     * __uv$config.encodeUrl().
+     * IMPORTANT:
+     *
+     * This is ./uv.sw.js
+     *
+     * NOT:
+     *
+     * /uv.sw.js
+     *
+     * Therefore HTML Hoster will request:
+     *
+     * /p/K0MN968P/uv.sw.js
+     */
+
+    const registration =
+        await navigator.serviceWorker.register(
+            UV_SW.href,
+            {
+                scope: UV_SCOPE.pathname
+            }
+        );
+
+
+    /*
+     * Wait for activation.
      */
 
     if(
-      typeof controller.createFrame ===
-      "function"
+        registration.installing
     ){
 
-      /*
-       * Remove the previous frame.
-       */
+        await new Promise(
+            resolve => {
 
-      if(scramjetFrame){
+                registration.installing.addEventListener(
+                    "statechange",
+                    function(){
 
-        try{
+                        if(
+                            this.state ===
+                            "activated"
+                        ){
 
-          scramjetFrame.frame.remove();
+                            resolve();
 
-        }catch{}
+                        }
 
-      }
+                    }
+                );
 
-
-      scramjetFrame =
-        controller.createFrame(
-          page
+            }
         );
-
-
-      if(
-        typeof scramjetFrame.go ===
-        "function"
-      ){
-
-        await scramjetFrame.go(url);
-
-      }else if(
-        typeof scramjetFrame.navigate ===
-        "function"
-      ){
-
-        await scramjetFrame.navigate(
-          url
-        );
-
-      }else{
-
-        throw new Error(
-          "Scramjet Frame navigation API was not found."
-        );
-
-      }
-
-    }else{
-
-      throw new Error(
-        "This Scramjet controller build does not expose createFrame()."
-      );
 
     }
 
 
-    hideLoading();
-
-    showStatus(
-      "Loaded"
-    );
+    await navigator.serviceWorker.ready;
 
 
-  }catch(e){
-
-    console.error(
-      "Scramjet:",
-      e
-    );
-
-
-    showError(
-      "Scramjet could not start.\n\n" +
-      e.message +
-      "\n\n" +
-      "Required files must be available relative " +
-      "to this page:\n\n" +
-      "./sw.js\n" +
-      "./scramjet/controller.js\n" +
-      "./scramjet/transport.js\n\n" +
-      "The transport must also be connected to a " +
-      "working proxy backend."
-    );
-
-  }
+    return registration;
 
 }
 
 
-/* =========================================================
+/* =====================================================
+   CHECK UV CONFIG
+===================================================== */
+
+function getUVConfig(){
+
+    /*
+     * uv.config.js should create:
+     *
+     * self.__uv$config
+     */
+
+    if(
+        !window.__uv$config
+    ){
+
+        throw new Error(
+            "uv.config.js did not create __uv$config."
+        );
+
+    }
+
+
+    return window.__uv$config;
+
+}
+
+
+/* =====================================================
+   CREATE PROXY URL
+===================================================== */
+
+function makeProxyURL(target){
+
+    const config =
+        getUVConfig();
+
+
+    if(
+        typeof config.encodeUrl !==
+        "function"
+    ){
+
+        throw new Error(
+            "UV encodeUrl function is missing."
+        );
+
+    }
+
+
+    const encoded =
+        config.encodeUrl(
+            target
+        );
+
+
+    /*
+     * config.prefix should be:
+     *
+     * ./service/
+     *
+     * or
+     *
+     * /p/K0MN968P/service/
+     *
+     *
+     * We resolve it against the current
+     * page instead of assuming root.
+     */
+
+    const proxy =
+        new URL(
+            config.prefix +
+            encoded,
+            location.href
+        );
+
+
+    return proxy.href;
+
+}
+
+
+/* =====================================================
+   LOAD THROUGH UV
+===================================================== */
+
+async function loadThroughUV(url){
+
+    showStatus(
+        "Starting UV..."
+    );
+
+
+    /*
+     * Register service worker.
+     */
+
+    await registerUV();
+
+
+    /*
+     * Get UV configuration.
+     */
+
+    const config =
+        getUVConfig();
+
+
+    /*
+     * Build proxied URL.
+     */
+
+    const proxyURL =
+        makeProxyURL(
+            url
+        );
+
+
+    console.log(
+        "UV target:",
+        url
+    );
+
+    console.log(
+        "UV proxy:",
+        proxyURL
+    );
+
+
+    /*
+     * The service worker needs to control
+     * the iframe's navigation.
+     */
+
+    page.onload = () => {
+
+        hideLoading();
+
+        showStatus(
+            "Loaded"
+        );
+
+    };
+
+
+    page.onerror = () => {
+
+        showError(
+            "Ultraviolet could not load the destination."
+        );
+
+    };
+
+
+    /*
+     * IMPORTANT:
+     *
+     * The iframe must be inside the UV service
+     * worker's scope.
+     */
+
+    page.src =
+        proxyURL;
+
+}
+
+
+/* =====================================================
+   LOAD URL
+===================================================== */
+
+async function loadURL(
+    value,
+    record = true
+){
+
+    const url =
+        normalizeURL(
+            value
+        );
+
+
+    if(!url)
+        return;
+
+
+    showLoading();
+
+    error.style.display =
+        "none";
+
+
+    if(record){
+
+        addHistory(
+            url
+        );
+
+    }
+
+
+    currentURL =
+        url;
+
+
+    address.value =
+        url;
+
+
+    home.style.display =
+        "none";
+
+
+    try{
+
+        document.title =
+            "Web — " +
+            new URL(url).hostname;
+
+    }catch{
+
+        document.title =
+            "Web";
+
+    }
+
+
+    try{
+
+        await loadThroughUV(
+            url
+        );
+
+    }catch(e){
+
+        console.error(
+            "UV ERROR:",
+            e
+        );
+
+
+        showError(
+            "Ultraviolet could not be started.\n\n" +
+            e.message +
+            "\n\n" +
+
+            "Required files at this page's location:\n" +
+
+            new URL(
+                "./uv.bundle.js",
+                BASE
+            ).href +
+            "\n" +
+
+            new URL(
+                "./uv.config.js",
+                BASE
+            ).href +
+            "\n" +
+
+            new URL(
+                "./uv.handler.js",
+                BASE
+            ).href +
+            "\n" +
+
+            new URL(
+                "./uv.sw.js",
+                BASE
+            ).href +
+            "\n\n" +
+
+            "Service-worker scope:\n" +
+            UV_SCOPE.pathname
+        );
+
+    }
+
+}
+
+
+/* =====================================================
    BACK
-========================================================= */
+===================================================== */
 
 document
-  .getElementById("back")
-  .onclick = () => {
+.getElementById("back")
+.onclick = () => {
 
     if(historyPosition <= 0){
 
-      showStatus(
-        "No previous page"
-      );
+        showStatus(
+            "No previous page"
+        );
 
-      return;
+        return;
 
     }
 
@@ -863,33 +850,33 @@ document
 
 
     loadURL(
-      historyList[
-        historyPosition
-      ],
-      false
+        historyList[
+            historyPosition
+        ],
+        false
     );
 
-  };
+};
 
 
-/* =========================================================
+/* =====================================================
    FORWARD
-========================================================= */
+===================================================== */
 
 document
-  .getElementById("forward")
-  .onclick = () => {
+.getElementById("forward")
+.onclick = () => {
 
     if(
-      historyPosition >=
-      historyList.length - 1
+        historyPosition >=
+        historyList.length - 1
     ){
 
-      showStatus(
-        "No next page"
-      );
+        showStatus(
+            "No next page"
+        );
 
-      return;
+        return;
 
     }
 
@@ -898,275 +885,282 @@ document
 
 
     loadURL(
-      historyList[
-        historyPosition
-      ],
-      false
+        historyList[
+            historyPosition
+        ],
+        false
     );
 
-  };
+};
 
 
-/* =========================================================
+/* =====================================================
    RELOAD
-========================================================= */
+===================================================== */
 
 document
-  .getElementById("reload")
-  .onclick = () => {
+.getElementById("reload")
+.onclick = () => {
 
     if(!currentURL){
 
-      showStatus(
-        "Nothing to reload"
-      );
+        showStatus(
+            "Nothing to reload"
+        );
 
-      return;
+        return;
 
     }
 
 
     loadURL(
-      currentURL,
-      false
+        currentURL,
+        false
     );
 
-  };
+};
 
 
-/* =========================================================
+/* =====================================================
    GO
-========================================================= */
+===================================================== */
 
 document
-  .getElementById("go")
-  .onclick = () => {
+.getElementById("go")
+.onclick = () => {
 
     loadURL(
-      address.value
+        address.value
     );
 
-  };
+};
 
 
 address.addEventListener(
-  "keydown",
-  event => {
+    "keydown",
+    e => {
 
-    if(
-      event.key === "Enter"
-    ){
+        if(e.key === "Enter"){
 
-      loadURL(
-        address.value
-      );
+            loadURL(
+                address.value
+            );
+
+        }
 
     }
-
-  }
 );
 
 
-/* =========================================================
+/* =====================================================
    HOME
-========================================================= */
+===================================================== */
 
 homeinput.addEventListener(
-  "keydown",
-  event => {
+    "keydown",
+    e => {
 
-    if(
-      event.key === "Enter"
-    ){
+        if(e.key === "Enter"){
 
-      loadURL(
-        homeinput.value
-      );
+            loadURL(
+                homeinput.value
+            );
+
+        }
 
     }
-
-  }
 );
 
 
-/* =========================================================
+/* =====================================================
    RETRY
-========================================================= */
+===================================================== */
 
 document
-  .getElementById("retry")
-  .onclick = () => {
+.getElementById("retry")
+.onclick = () => {
 
     if(currentURL){
 
-      loadURL(
-        currentURL,
-        false
-      );
+        loadURL(
+            currentURL,
+            false
+        );
 
     }
 
-  };
+};
 
 
-/* =========================================================
+/* =====================================================
    FULLSCREEN
-========================================================= */
+===================================================== */
 
 document
-  .getElementById("fullscreen")
-  .onclick = async () => {
+.getElementById("fullscreen")
+.onclick = async () => {
 
     try{
 
-      if(
-        !document.fullscreenElement
-      ){
+        if(
+            !document.fullscreenElement
+        ){
 
-        await document
-          .documentElement
-          .requestFullscreen();
+            await document
+                .documentElement
+                .requestFullscreen();
 
-      }else{
+        }else{
 
-        await document
-          .exitFullscreen();
+            await document
+                .exitFullscreen();
 
-      }
+        }
 
     }catch{
 
-      showStatus(
-        "Fullscreen unavailable"
-      );
+        showStatus(
+            "Fullscreen unavailable"
+        );
 
     }
 
-  };
+};
 
 
-/* =========================================================
+/* =====================================================
    CLOAK
-========================================================= */
+===================================================== */
 
 document
-  .getElementById("cloak")
-  .onclick = () => {
+.getElementById("cloak")
+.onclick = () => {
 
     document.title =
-      "Google";
+        "Google";
 
 
     let icon =
-      document.querySelector(
-        "link[rel='icon']"
-      );
+        document.querySelector(
+            "link[rel='icon']"
+        );
 
 
     if(!icon){
 
-      icon =
-        document.createElement(
-          "link"
+        icon =
+            document.createElement(
+                "link"
+            );
+
+        icon.rel =
+            "icon";
+
+        document.head.appendChild(
+            icon
         );
-
-      icon.rel =
-        "icon";
-
-      document.head.appendChild(
-        icon
-      );
 
     }
 
 
     icon.href =
-      "data:image/svg+xml," +
-      encodeURIComponent(`
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 64 64">
+        "data:image/svg+xml," +
+        encodeURIComponent(`
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 64 64">
 
-          <circle
-            cx="32"
-            cy="32"
-            r="30"
-            fill="white"/>
+                <circle
+                    cx="32"
+                    cy="32"
+                    r="30"
+                    fill="white"/>
 
-          <path
-            d="M32 10a22 22 0 1 0 22 22H32z"
-            fill="#4285f4"/>
+                <path
+                    d="M32 10a22 22 0 1 0 22 22H32z"
+                    fill="#4285f4"/>
 
-        </svg>
-      `);
+            </svg>
+        `);
 
 
     showStatus(
-      "Cloaked"
+        "Cloaked"
     );
 
-  };
+};
 
 
-/* =========================================================
+/* =====================================================
    KEYBOARD
-========================================================= */
+===================================================== */
 
 document.addEventListener(
-  "keydown",
-  event => {
+    "keydown",
+    e => {
 
-    if(
-      event.ctrlKey &&
-      event.key.toLowerCase() === "l"
-    ){
+        if(
+            e.ctrlKey &&
+            e.key.toLowerCase() === "l"
+        ){
 
-      event.preventDefault();
+            e.preventDefault();
 
-      address.focus();
+            address.focus();
 
-      address.select();
+            address.select();
+
+        }
+
+
+        if(
+            e.altKey &&
+            e.key === "ArrowLeft"
+        ){
+
+            e.preventDefault();
+
+            document
+                .getElementById("back")
+                .click();
+
+        }
+
+
+        if(
+            e.altKey &&
+            e.key === "ArrowRight"
+        ){
+
+            e.preventDefault();
+
+            document
+                .getElementById("forward")
+                .click();
+
+        }
 
     }
-
-
-    if(
-      event.altKey &&
-      event.key === "ArrowLeft"
-    ){
-
-      event.preventDefault();
-
-      document
-        .getElementById("back")
-        .click();
-
-    }
-
-
-    if(
-      event.altKey &&
-      event.key === "ArrowRight"
-    ){
-
-      event.preventDefault();
-
-      document
-        .getElementById("forward")
-        .click();
-
-    }
-
-  }
 );
 
 
-/* =========================================================
-   START
-========================================================= */
+/* =====================================================
+   STARTUP
+===================================================== */
+
+console.log(
+    "UV service worker:",
+    UV_SW.href
+);
+
+console.log(
+    "UV scope:",
+    UV_SCOPE.pathname
+);
+
 
 showStatus(
-  "Ready"
+    "UV Ready"
 );
 
 </script>
