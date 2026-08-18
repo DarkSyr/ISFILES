@@ -181,9 +181,9 @@ button:hover{
 
 <div id="bar">
 
-<button id="back" title="Back">←</button>
-<button id="forward" title="Forward">→</button>
-<button id="reload" title="Reload">↻</button>
+<button id="back">←</button>
+<button id="forward">→</button>
+<button id="reload">↻</button>
 
 <input
  id="address"
@@ -193,14 +193,13 @@ button:hover{
 >
 
 <button id="go">Go</button>
-<button id="cloak" title="Cloak">◉</button>
-<button id="fullscreen" title="Fullscreen">⛶</button>
+<button id="cloak">◉</button>
+<button id="fullscreen">⛶</button>
 
 </div>
 
 <iframe
  id="page"
- sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts allow-downloads"
  allow="fullscreen; autoplay; clipboard-read; clipboard-write"
  referrerpolicy="no-referrer">
 </iframe>
@@ -211,7 +210,7 @@ button:hover{
 
 <h1>Web</h1>
 
-<p>Bare Web Proxy</p>
+<p>Scramjet Web Proxy</p>
 
 <input
  id="homeinput"
@@ -244,19 +243,40 @@ button:hover{
 <div id="status"></div>
 
 
-<!-- =====================================================
-     BARE TRANSPORT
-===================================================== -->
-
-<script src="https://unpkg.com/@mercuryworkshop/bare-transport@1/dist/index.js"></script>
-
 <script>
 "use strict";
 
+/*
+===========================================================
+SCRAMJET FRONTEND
+===========================================================
 
-/* =====================================================
+IMPORTANT:
+
+Current Scramjet uses:
+
+    Controller
+       ↓
+    Service Worker
+       ↓
+    ProxyTransport
+       ↓
+    Wisp / HTTP transport
+       ↓
+    Internet
+
+It does NOT work by doing:
+
+    BareClient.fetch(url)
+
+The official Scramjet project uses this architecture.
+===========================================================
+*/
+
+
+/* =========================================================
    ELEMENTS
-===================================================== */
+========================================================= */
 
 const page =
   document.getElementById("page");
@@ -283,57 +303,9 @@ const status =
   document.getElementById("status");
 
 
-/* =====================================================
-   BARE SERVER
-===================================================== */
-
-/*
- * Public OpenBare node.
- *
- * The OpenBare project currently documents this
- * node as:
- *
- * https://openbare.xyz/bare/
- */
-
-const BARE_SERVER =
-  "https://openbare.xyz/bare/";
-
-
-/* =====================================================
-   BARE CLIENT
-===================================================== */
-
-let bareClient = null;
-
-try{
-
-  if(
-    typeof BareMod === "undefined" ||
-    typeof BareMod.BareClient !== "function"
-  ){
-
-    throw new Error(
-      "Bare transport library did not load."
-    );
-
-  }
-
-  bareClient =
-    new BareMod.BareClient(
-      BARE_SERVER
-    );
-
-}catch(e){
-
-  console.error(e);
-
-}
-
-
-/* =====================================================
+/* =========================================================
    STATE
-===================================================== */
+========================================================= */
 
 let currentURL = "";
 
@@ -341,76 +313,62 @@ let historyList = [];
 
 let historyPosition = -1;
 
-let currentBlob = null;
+let controller = null;
+
+let frame = null;
 
 
-/* =====================================================
+/* =========================================================
    STATUS
-===================================================== */
+========================================================= */
 
 function showStatus(text){
 
-  status.textContent =
-    text;
+  status.textContent = text;
 
-  status.style.display =
-    "block";
+  status.style.display = "block";
 
-  clearTimeout(
-    status.timer
-  );
+  clearTimeout(status.timer);
 
   status.timer =
     setTimeout(()=>{
-      status.style.display =
-        "none";
+      status.style.display = "none";
     },2000);
-
 }
 
-
-/* =====================================================
-   LOADING
-===================================================== */
 
 function showLoading(){
 
-  loading.style.display =
-    "flex";
+  loading.style.display = "flex";
 
 }
+
 
 function hideLoading(){
 
-  loading.style.display =
-    "none";
+  loading.style.display = "none";
 
 }
 
 
-/* =====================================================
-   CLEAN BLOB
-===================================================== */
+/* =========================================================
+   ERROR
+========================================================= */
 
-function cleanupBlob(){
+function showError(message){
 
-  if(currentBlob){
+  hideLoading();
 
-    URL.revokeObjectURL(
-      currentBlob
-    );
+  error.style.display = "flex";
 
-    currentBlob =
-      null;
-
-  }
+  errortext.textContent = message;
 
 }
 
 
-/* =====================================================
-   NORMALIZE URL
-===================================================== */
+/* =========================================================
+   URL NORMALIZATION
+========================================================= */
 
 function normalizeURL(value){
 
@@ -419,24 +377,6 @@ function normalizeURL(value){
 
   if(!value)
     return null;
-
-
-  if(
-    value.startsWith("blob:")
-  ){
-
-    return value;
-
-  }
-
-
-  if(
-    value.startsWith("data:")
-  ){
-
-    return value;
-
-  }
 
 
   if(
@@ -467,17 +407,15 @@ function normalizeURL(value){
 }
 
 
-/* =====================================================
+/* =========================================================
    HISTORY
-===================================================== */
+========================================================= */
 
 function addHistory(url){
 
   if(
     historyPosition >= 0 &&
-    historyList[
-      historyPosition
-    ] === url
+    historyList[historyPosition] === url
   ){
 
     return;
@@ -492,10 +430,7 @@ function addHistory(url){
     );
 
 
-  historyList.push(
-    url
-  );
-
+  historyList.push(url);
 
   historyPosition =
     historyList.length - 1;
@@ -503,486 +438,109 @@ function addHistory(url){
 }
 
 
-/* =====================================================
-   ERROR
-===================================================== */
+/* =========================================================
+   SCRAMJET INITIALIZATION
+========================================================= */
 
-function showError(message){
-
-  hideLoading();
-
-  cleanupBlob();
-
-  page.src =
-    "about:blank";
-
-  error.style.display =
-    "flex";
-
-  errortext.textContent =
-    message;
-
-}
-
-
-/* =====================================================
-   ABSOLUTE URL
-===================================================== */
-
-function absoluteURL(
-  value,
-  base
-){
-
-  try{
-
-    return new URL(
-      value,
-      base
-    ).href;
-
-  }catch{
-
-    return value;
-
-  }
-
-}
-
-
-/* =====================================================
-   PROXY URL
-===================================================== */
-
-function proxyURL(
-  url
-){
+async function initializeScramjet(){
 
   /*
-   * This page fetches resources itself
-   * through Bare.
-   *
-   * Resources are therefore converted
-   * into blob URLs below.
-   */
-
-  return url;
-
-}
-
-
-/* =====================================================
-   REWRITE HTML
-===================================================== */
-
-function rewriteHTML(
-  html,
-  targetURL
-){
-
-  const parser =
-    new DOMParser();
-
-  const doc =
-    parser.parseFromString(
-      html,
-      "text/html"
-    );
-
-
-  /*
-   * Make relative resources absolute.
-   */
-
-  const base =
-    doc.createElement(
-      "base"
-    );
-
-  base.href =
-    targetURL;
-
-
-  if(doc.head){
-
-    doc.head.prepend(
-      base
-    );
-
-  }
-
-
-  /*
-   * Remove CSP meta tags.
-   */
-
-  doc
-    .querySelectorAll(
-      'meta[http-equiv="Content-Security-Policy"]'
-    )
-    .forEach(
-      el=>el.remove()
-    );
-
-
-  /*
-   * Remove frame restrictions
-   * represented as meta tags.
-   */
-
-  doc
-    .querySelectorAll(
-      'meta[http-equiv="X-Frame-Options"]'
-    )
-    .forEach(
-      el=>el.remove()
-    );
-
-
-  /*
-   * Remove problematic integrity
-   * attributes because fetched resources
-   * are reconstructed.
-   */
-
-  doc
-    .querySelectorAll(
-      "[integrity]"
-    )
-    .forEach(
-      el=>el.removeAttribute(
-        "integrity"
-      )
-    );
-
-
-  /*
-   * Rewrite ordinary links.
-   *
-   * The generated document cannot directly
-   * use the original URL because that would
-   * bypass Bare.
-   */
-
-  doc
-    .querySelectorAll(
-      "a[href]"
-    )
-    .forEach(
-      a=>{
-
-        const href =
-          a.getAttribute(
-            "href"
-          );
-
-        if(!href)
-          return;
-
-        if(
-          href.startsWith(
-            "javascript:"
-          ) ||
-          href.startsWith(
-            "#"
-          )
-        ){
-
-          return;
-
-        }
-
-        const absolute =
-          absoluteURL(
-            href,
-            targetURL
-          );
-
-        a.setAttribute(
-          "href",
-          "javascript:window.parent.postMessage({type:'bare-navigate',url:" +
-          JSON.stringify(absolute) +
-          "},'*');void(0)"
-        );
-
-      }
-    );
-
-
-  /*
-   * Forms.
-   */
-
-  doc
-    .querySelectorAll(
-      "form[action]"
-    )
-    .forEach(
-      form=>{
-
-        const action =
-          form.getAttribute(
-            "action"
-          );
-
-        if(!action)
-          return;
-
-        const absolute =
-          absoluteURL(
-            action,
-            targetURL
-          );
-
-        form.setAttribute(
-          "action",
-          absolute
-        );
-
-      }
-    );
-
-
-  /*
-   * Return complete document.
-   */
-
-  return (
-    "<!DOCTYPE html>\n" +
-    doc.documentElement.outerHTML
-  );
-
-}
-
-
-/* =====================================================
-   FETCH THROUGH BARE
-===================================================== */
-
-async function bareFetch(
-  url
-){
-
-  if(!bareClient){
-
-    throw new Error(
-      "Bare client is not available."
-    );
-
-  }
-
-
-  showStatus(
-    "Connecting..."
-  );
-
-
-  const response =
-    await bareClient.fetch(
-      url
-    );
-
-
-  if(!response){
-
-    throw new Error(
-      "Bare returned no response."
-    );
-
-  }
-
-
-  return response;
-
-}
-
-
-/* =====================================================
-   LOAD HTML
-===================================================== */
-
-async function loadHTML(
-  response,
-  targetURL
-){
-
-  const html =
-    await response.text();
-
-
-  const rewritten =
-    rewriteHTML(
-      html,
-      targetURL
-    );
-
-
-  cleanupBlob();
-
-
-  const blob =
-    new Blob(
-      [
-        rewritten
-      ],
-      {
-        type:
-          "text/html;charset=utf-8"
-      }
-    );
-
-
-  currentBlob =
-    URL.createObjectURL(
-      blob
-    );
-
-
-  return currentBlob;
-
-}
-
-
-/* =====================================================
-   LOAD THROUGH BARE
-===================================================== */
-
-async function loadThroughBare(
-  targetURL
-){
-
-  showStatus(
-    "Fetching through Bare..."
-  );
-
-
-  const response =
-    await bareFetch(
-      targetURL
-    );
-
-
-  if(
-    !response.ok
-  ){
-
-    throw new Error(
-      "HTTP " +
-      response.status +
-      " returned by the destination."
-    );
-
-  }
-
-
-  const contentType =
-    response.headers.get(
-      "content-type"
-    ) || "";
-
-
-  /*
-   * HTML page.
+   * Scramjet requires HTTPS for the service worker,
+   * except when running on localhost.
    */
 
   if(
-    contentType.includes(
-      "text/html"
-    ) ||
-    contentType.includes(
-      "application/xhtml+xml"
-    )
+    location.protocol !== "https:" &&
+    location.hostname !== "localhost" &&
+    location.hostname !== "127.0.0.1"
   ){
 
-    const blobURL =
-      await loadHTML(
-        response,
-        targetURL
-      );
+    throw new Error(
+      "Scramjet requires HTTPS. " +
+      "Host this HTML page over HTTPS."
+    );
+
+  }
 
 
-    page.onload =
-      ()=>{
-        hideLoading();
-        showStatus(
-          "Loaded"
-        );
-      };
+  if(
+    !("serviceWorker" in navigator)
+  ){
 
-
-    page.onerror =
-      ()=>{
-        showError(
-          "The proxied page could not be displayed."
-        );
-      };
-
-
-    page.src =
-      blobURL;
-
-
-    return;
+    throw new Error(
+      "This browser does not support Service Workers."
+    );
 
   }
 
 
   /*
-   * Images, PDFs, text, etc.
+   * Register the Scramjet service worker.
+   *
+   * The SW must ultimately be same-origin.
    */
 
-  const buffer =
-    await response.arrayBuffer();
-
-
-  cleanupBlob();
-
-
-  const blob =
-    new Blob(
-      [
-        buffer
-      ],
+  const registration =
+    await navigator.serviceWorker.register(
+      "/scramjet.sw.js",
       {
-        type:
-          contentType ||
-          "application/octet-stream"
+        scope:"/"
       }
     );
 
 
-  currentBlob =
-    URL.createObjectURL(
-      blob
+  await navigator.serviceWorker.ready;
+
+
+  showStatus(
+    "Scramjet service worker ready"
+  );
+
+
+  /*
+   * The actual Scramjet Controller and transport
+   * are expected to be supplied by the hosting
+   * Scramjet application.
+   */
+
+  if(
+    typeof $scramjetController ===
+    "undefined"
+  ){
+
+    throw new Error(
+      "Scramjet Controller is not installed.\n\n" +
+      "A current Scramjet deployment requires the " +
+      "Scramjet controller, WASM, inject script, " +
+      "service worker, and a ProxyTransport."
+    );
+
+  }
+
+
+  controller =
+    $scramjetController;
+
+
+  frame =
+    controller.createFrame(
+      page
     );
 
 
-  page.onload =
-    ()=>{
-      hideLoading();
-      showStatus(
-        "Loaded"
-      );
-    };
+  await controller.wait();
 
 
-  page.onerror =
-    ()=>{
-      showError(
-        "The proxied resource could not be displayed."
-      );
-    };
-
-
-  page.src =
-    currentBlob;
+  showStatus(
+    "Scramjet ready"
+  );
 
 }
 
 
-/* =====================================================
-   LOAD URL
-===================================================== */
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
 async function loadURL(
   value,
@@ -990,9 +548,7 @@ async function loadURL(
 ){
 
   const url =
-    normalizeURL(
-      value
-    );
+    normalizeURL(value);
 
 
   if(!url)
@@ -1007,9 +563,7 @@ async function loadURL(
 
   if(record){
 
-    addHistory(
-      url
-    );
+    addHistory(url);
 
   }
 
@@ -1024,47 +578,11 @@ async function loadURL(
     "none";
 
 
-  /*
-   * Direct Blob URL.
-   */
-
-  if(
-    url.startsWith(
-      "blob:"
-    ) ||
-    url.startsWith(
-      "data:"
-    )
-  ){
-
-    cleanupBlob();
-
-    page.onload =
-      ()=>{
-        hideLoading();
-        showStatus(
-          "Loaded"
-        );
-      };
-
-    page.src =
-      url;
-
-    return;
-
-  }
-
-
   try{
-
-    const hostname =
-      new URL(
-        url
-      ).hostname;
 
     document.title =
       "Web — " +
-      hostname;
+      new URL(url).hostname;
 
   }catch{
 
@@ -1076,23 +594,49 @@ async function loadURL(
 
   try{
 
-    await loadThroughBare(
-      url
+    if(!frame){
+
+      await initializeScramjet();
+
+    }
+
+
+    /*
+     * Current Scramjet Frame navigation.
+     *
+     * The Scramjet controller handles interception,
+     * rewriting, cookies, redirects and transport.
+     */
+
+    frame.go(url);
+
+
+    showStatus(
+      "Loading " +
+      new URL(url).hostname
     );
+
+
+    /*
+     * The page itself will report its navigation
+     * through the Scramjet iframe.
+     */
+
+    setTimeout(()=>{
+      hideLoading();
+    },3000);
+
 
   }catch(e){
 
     console.error(
+      "Scramjet:",
       e
     );
 
     showError(
-      "The site could not be loaded through Bare.\n\n" +
-      e.message +
-      "\n\n" +
-      "The public Bare server may be unavailable, " +
-      "or this website may require functionality that " +
-      "a simple HTML-only Bare proxy cannot reproduce."
+      "Scramjet could not load this page.\n\n" +
+      e.message
     );
 
   }
@@ -1100,173 +644,141 @@ async function loadURL(
 }
 
 
-/* =====================================================
-   MESSAGES FROM IFRAME
-===================================================== */
+/* =========================================================
+   IFRAME EVENTS
+========================================================= */
 
-window.addEventListener(
-  "message",
-  event=>{
+page.addEventListener(
+  "load",
+  ()=>{
 
-    if(
-      !event.data ||
-      event.data.type !==
-      "bare-navigate"
-    ){
+    hideLoading();
 
-      return;
-
-    }
-
-
-    if(
-      typeof event.data.url !==
-      "string"
-    ){
-
-      return;
-
-    }
-
-
-    loadURL(
-      event.data.url
+    showStatus(
+      "Loaded"
     );
 
   }
 );
 
 
-/* =====================================================
+/* =========================================================
    BACK
-===================================================== */
+========================================================= */
 
 document
-  .getElementById(
-    "back"
-  )
-  .onclick =
-  ()=>{
+.getElementById("back")
+.onclick =
+()=>{
 
-    if(
-      historyPosition <= 0
-    ){
+  if(historyPosition <= 0){
 
-      showStatus(
-        "No previous page"
-      );
-
-      return;
-
-    }
-
-
-    historyPosition--;
-
-
-    loadURL(
-      historyList[
-        historyPosition
-      ],
-      false
+    showStatus(
+      "No previous page"
     );
 
-  };
+    return;
+
+  }
 
 
-/* =====================================================
+  historyPosition--;
+
+  loadURL(
+    historyList[
+      historyPosition
+    ],
+    false
+  );
+
+};
+
+
+/* =========================================================
    FORWARD
-===================================================== */
+========================================================= */
 
 document
-  .getElementById(
-    "forward"
-  )
-  .onclick =
-  ()=>{
+.getElementById("forward")
+.onclick =
+()=>{
 
-    if(
-      historyPosition >=
-      historyList.length - 1
-    ){
+  if(
+    historyPosition >=
+    historyList.length - 1
+  ){
 
-      showStatus(
-        "No next page"
-      );
-
-      return;
-
-    }
-
-
-    historyPosition++;
-
-
-    loadURL(
-      historyList[
-        historyPosition
-      ],
-      false
+    showStatus(
+      "No next page"
     );
 
-  };
+    return;
+
+  }
 
 
-/* =====================================================
+  historyPosition++;
+
+  loadURL(
+    historyList[
+      historyPosition
+    ],
+    false
+  );
+
+};
+
+
+/* =========================================================
    RELOAD
-===================================================== */
+========================================================= */
 
 document
-  .getElementById(
-    "reload"
-  )
-  .onclick =
-  ()=>{
+.getElementById("reload")
+.onclick =
+()=>{
 
-    if(!currentURL){
+  if(!currentURL){
 
-      showStatus(
-        "Nothing to reload"
-      );
-
-      return;
-
-    }
-
-
-    loadURL(
-      currentURL,
-      false
+    showStatus(
+      "Nothing to reload"
     );
 
-  };
+    return;
+
+  }
 
 
-/* =====================================================
+  loadURL(
+    currentURL,
+    false
+  );
+
+};
+
+
+/* =========================================================
    GO
-===================================================== */
+========================================================= */
 
 document
-  .getElementById(
-    "go"
-  )
-  .onclick =
-  ()=>{
+.getElementById("go")
+.onclick =
+()=>{
 
-    loadURL(
-      address.value
-    );
+  loadURL(
+    address.value
+  );
 
-  };
+};
 
 
 address.addEventListener(
   "keydown",
-  e=>{
+  event=>{
 
     if(
-      e.key ===
-      "Enter"
+      event.key === "Enter"
     ){
 
       loadURL(
@@ -1279,17 +791,16 @@ address.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    HOME
-===================================================== */
+========================================================= */
 
 homeinput.addEventListener(
   "keydown",
-  e=>{
+  event=>{
 
     if(
-      e.key ===
-      "Enter"
+      event.key === "Enter"
     ){
 
       loadURL(
@@ -1302,149 +813,142 @@ homeinput.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    RETRY
-===================================================== */
+========================================================= */
 
 document
-  .getElementById(
-    "retry"
-  )
-  .onclick =
-  ()=>{
+.getElementById("retry")
+.onclick =
+()=>{
 
-    if(currentURL){
+  if(currentURL){
 
-      loadURL(
-        currentURL,
-        false
-      );
-
-    }
-
-  };
-
-
-/* =====================================================
-   FULLSCREEN
-===================================================== */
-
-document
-  .getElementById(
-    "fullscreen"
-  )
-  .onclick =
-  async()=>{
-
-    try{
-
-      if(
-        !document.fullscreenElement
-      ){
-
-        await document
-          .documentElement
-          .requestFullscreen();
-
-      }else{
-
-        await document
-          .exitFullscreen();
-
-      }
-
-    }catch{
-
-      showStatus(
-        "Fullscreen unavailable"
-      );
-
-    }
-
-  };
-
-
-/* =====================================================
-   CLOAK
-===================================================== */
-
-document
-  .getElementById(
-    "cloak"
-  )
-  .onclick =
-  ()=>{
-
-    document.title =
-      "Google";
-
-
-    let icon =
-      document.querySelector(
-        "link[rel='icon']"
-      );
-
-
-    if(!icon){
-
-      icon =
-        document.createElement(
-          "link"
-        );
-
-      icon.rel =
-        "icon";
-
-      document.head.appendChild(
-        icon
-      );
-
-    }
-
-
-    icon.href =
-      "data:image/svg+xml," +
-      encodeURIComponent(`
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 64 64">
-
-          <circle
-            cx="32"
-            cy="32"
-            r="30"
-            fill="white"/>
-
-          <path
-            d="M32 10a22 22 0 1 0 22 22H32z"
-            fill="#4285f4"/>
-
-        </svg>
-      `);
-
-
-    showStatus(
-      "Cloaked"
+    loadURL(
+      currentURL,
+      false
     );
 
-  };
+  }
+
+};
 
 
-/* =====================================================
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+document
+.getElementById("fullscreen")
+.onclick =
+async()=>{
+
+  try{
+
+    if(
+      !document.fullscreenElement
+    ){
+
+      await document
+        .documentElement
+        .requestFullscreen();
+
+    }else{
+
+      await document
+        .exitFullscreen();
+
+    }
+
+  }catch{
+
+    showStatus(
+      "Fullscreen unavailable"
+    );
+
+  }
+
+};
+
+
+/* =========================================================
+   CLOAK
+========================================================= */
+
+document
+.getElementById("cloak")
+.onclick =
+()=>{
+
+  document.title =
+    "Google";
+
+
+  let icon =
+    document.querySelector(
+      "link[rel='icon']"
+    );
+
+
+  if(!icon){
+
+    icon =
+      document.createElement(
+        "link"
+      );
+
+    icon.rel =
+      "icon";
+
+    document.head.appendChild(
+      icon
+    );
+
+  }
+
+
+  icon.href =
+    "data:image/svg+xml," +
+    encodeURIComponent(`
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 64 64">
+
+        <circle
+          cx="32"
+          cy="32"
+          r="30"
+          fill="white"/>
+
+        <path
+          d="M32 10a22 22 0 1 0 22 22H32z"
+          fill="#4285f4"/>
+
+      </svg>
+    `);
+
+
+  showStatus(
+    "Cloaked"
+  );
+
+};
+
+
+/* =========================================================
    KEYBOARD
-===================================================== */
+========================================================= */
 
 document.addEventListener(
   "keydown",
-  e=>{
+  event=>{
 
     if(
-      e.ctrlKey &&
-      e.key.toLowerCase() ===
-      "l"
+      event.ctrlKey &&
+      event.key.toLowerCase() === "l"
     ){
 
-      e.preventDefault();
+      event.preventDefault();
 
       address.focus();
 
@@ -1454,34 +958,28 @@ document.addEventListener(
 
 
     if(
-      e.altKey &&
-      e.key ===
-      "ArrowLeft"
+      event.altKey &&
+      event.key === "ArrowLeft"
     ){
 
-      e.preventDefault();
+      event.preventDefault();
 
       document
-        .getElementById(
-          "back"
-        )
+        .getElementById("back")
         .click();
 
     }
 
 
     if(
-      e.altKey &&
-      e.key ===
-      "ArrowRight"
+      event.altKey &&
+      event.key === "ArrowRight"
     ){
 
-      e.preventDefault();
+      event.preventDefault();
 
       document
-        .getElementById(
-          "forward"
-        )
+        .getElementById("forward")
         .click();
 
     }
@@ -1490,20 +988,39 @@ document.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    STARTUP
-===================================================== */
+========================================================= */
 
-if(bareClient){
+showStatus(
+  "Starting Scramjet..."
+);
 
-  showStatus(
-    "Bare ready"
-  );
 
-}else{
+/*
+ * We intentionally don't pretend that Scramjet
+ * can be loaded from one arbitrary CDN script.
+ *
+ * The current official architecture requires
+ * same-origin controller/SW/WASM assets and
+ * a ProxyTransport.
+ */
+
+try{
+
+  await initializeScramjet();
+
+}catch(e){
+
+  console.error(e);
 
   showError(
-    "Bare transport failed to load."
+    e.message +
+    "\n\n" +
+    "This HTML is the browser UI. " +
+    "For a working current Scramjet proxy, " +
+    "the Scramjet service worker/controller " +
+    "and a transport server must also be deployed."
   );
 
 }
