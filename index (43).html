@@ -359,57 +359,134 @@ function hideLoading(){
 
 
 /* =========================================================
-   URL NORMALIZATION
+   URL IZATION
 ========================================================= */
 
 function normalizeURL(value){
+  value = String(value || "").trim();
 
-  value =
-    String(value || "").trim();
+  if (!value) return null;
 
-  if(!value)
-    return null;
+  /* Allow blob URLs */
+  if (value.startsWith("blob:")) {
+    return value;
+  }
 
+  /* Allow data URLs */
+  if (value.startsWith("data:")) {
+    return value;
+  }
 
-  /*
-   * Already a URL
-   */
-
-  if(
+  /* Normal URLs */
+  if (
     value.startsWith("http://") ||
     value.startsWith("https://")
-  ){
-
+  ) {
     return value;
-
   }
 
-
-  /*
-   * Domain
-   */
-
-  if(
+  /* Domain */
+  if (
     !value.includes(" ") &&
     value.includes(".")
-  ){
-
+  ) {
     return "https://" + value;
-
   }
 
-
-  /*
-   * Search
-   */
-
+  /* Search */
   return (
     "https://www.google.com/search?q=" +
     encodeURIComponent(value)
   );
-
 }
 
+
+async function loadURL(value, record = true){
+
+  const url = normalizeURL(value);
+
+  if (!url) return;
+
+  showLoading();
+  error.style.display = "none";
+
+  try {
+
+    if (record) {
+      addHistory(url);
+    }
+
+    currentURL = url;
+    address.value = url;
+    home.style.display = "none";
+
+    /*
+     * BLOB / DATA URLs cannot be encoded by UV.
+     * Load them directly instead.
+     */
+    if (
+      url.startsWith("blob:") ||
+      url.startsWith("data:")
+    ) {
+
+      page.src = url;
+
+      page.onload = () => {
+        hideLoading();
+        showStatus("Loaded");
+      };
+
+      page.onerror = () => {
+        hideLoading();
+        showProxyError(
+          "The blob/data URL could not be loaded."
+        );
+      };
+
+      return;
+    }
+
+
+    /*
+     * Normal HTTP/HTTPS URLs go through UV.
+     */
+    await registerUV();
+
+    const proxyURL = makeProxyURL(url);
+
+    page.src = proxyURL;
+
+    page.onload = () => {
+      hideLoading();
+      showStatus("Loaded");
+    };
+
+    page.onerror = () => {
+      hideLoading();
+
+      showProxyError(
+        "The proxied page could not be loaded."
+      );
+    };
+
+    try {
+      document.title =
+        "Web — " +
+        new URL(url).hostname;
+    } catch {
+      document.title = "Web";
+    }
+
+  } catch (e) {
+
+    hideLoading();
+
+    showProxyError(
+      e.message
+    );
+
+  }
+}
 
 /* =========================================================
    UV REGISTRATION
