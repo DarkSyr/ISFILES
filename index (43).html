@@ -148,7 +148,7 @@ button:hover{
 }
 
 #errorbox{
-  max-width:650px
+  max-width:700px
 }
 
 #error h2{
@@ -181,9 +181,9 @@ button:hover{
 
 <div id="bar">
 
-<button id="back">←</button>
-<button id="forward">→</button>
-<button id="reload">↻</button>
+<button id="back" title="Back">←</button>
+<button id="forward" title="Forward">→</button>
+<button id="reload" title="Reload">↻</button>
 
 <input
  id="address"
@@ -193,8 +193,8 @@ button:hover{
 >
 
 <button id="go">Go</button>
-<button id="cloak">◉</button>
-<button id="fullscreen">⛶</button>
+<button id="cloak" title="Cloak">◉</button>
+<button id="fullscreen" title="Fullscreen">⛶</button>
 
 </div>
 
@@ -211,7 +211,7 @@ button:hover{
 
 <h1>Web</h1>
 
-<p>Static Blob Web Viewer</p>
+<p>Bare Web Proxy</p>
 
 <input
  id="homeinput"
@@ -244,21 +244,19 @@ button:hover{
 <div id="status"></div>
 
 
-<!--
-===========================================================
-BARE CLIENT
-===========================================================
--->
+<!-- =====================================================
+     BARE TRANSPORT
+===================================================== -->
 
-<script src="https://unpkg.com/@mercuryworkshop/bare-transport@2/dist/index.js"></script>
+<script src="https://unpkg.com/@mercuryworkshop/bare-transport@1/dist/index.js"></script>
 
 <script>
 "use strict";
 
 
-/* =========================================================
+/* =====================================================
    ELEMENTS
-========================================================= */
+===================================================== */
 
 const page =
   document.getElementById("page");
@@ -285,17 +283,26 @@ const status =
   document.getElementById("status");
 
 
-/* =========================================================
-   PUBLIC BARE SERVER
-========================================================= */
+/* =====================================================
+   BARE SERVER
+===================================================== */
+
+/*
+ * Public OpenBare node.
+ *
+ * The OpenBare project currently documents this
+ * node as:
+ *
+ * https://openbare.xyz/bare/
+ */
 
 const BARE_SERVER =
   "https://openbare.xyz/bare/";
 
 
-/* =========================================================
+/* =====================================================
    BARE CLIENT
-========================================================= */
+===================================================== */
 
 let bareClient = null;
 
@@ -307,7 +314,7 @@ try{
   ){
 
     throw new Error(
-      "Bare Transport failed to load."
+      "Bare transport library did not load."
     );
 
   }
@@ -324,9 +331,9 @@ try{
 }
 
 
-/* =========================================================
+/* =====================================================
    STATE
-========================================================= */
+===================================================== */
 
 let currentURL = "";
 
@@ -337,9 +344,9 @@ let historyPosition = -1;
 let currentBlob = null;
 
 
-/* =========================================================
+/* =====================================================
    STATUS
-========================================================= */
+===================================================== */
 
 function showStatus(text){
 
@@ -357,14 +364,14 @@ function showStatus(text){
     setTimeout(()=>{
       status.style.display =
         "none";
-    },1800);
+    },2000);
 
 }
 
 
-/* =========================================================
+/* =====================================================
    LOADING
-========================================================= */
+===================================================== */
 
 function showLoading(){
 
@@ -381,9 +388,29 @@ function hideLoading(){
 }
 
 
-/* =========================================================
-   URL NORMALIZATION
-========================================================= */
+/* =====================================================
+   CLEAN BLOB
+===================================================== */
+
+function cleanupBlob(){
+
+  if(currentBlob){
+
+    URL.revokeObjectURL(
+      currentBlob
+    );
+
+    currentBlob =
+      null;
+
+  }
+
+}
+
+
+/* =====================================================
+   NORMALIZE URL
+===================================================== */
 
 function normalizeURL(value){
 
@@ -395,7 +422,15 @@ function normalizeURL(value){
 
 
   if(
-    value.startsWith("blob:") ||
+    value.startsWith("blob:")
+  ){
+
+    return value;
+
+  }
+
+
+  if(
     value.startsWith("data:")
   ){
 
@@ -419,8 +454,7 @@ function normalizeURL(value){
     value.includes(".")
   ){
 
-    return "https://" +
-      value;
+    return "https://" + value;
 
   }
 
@@ -433,9 +467,9 @@ function normalizeURL(value){
 }
 
 
-/* =========================================================
+/* =====================================================
    HISTORY
-========================================================= */
+===================================================== */
 
 function addHistory(url){
 
@@ -458,7 +492,9 @@ function addHistory(url){
     );
 
 
-  historyList.push(url);
+  historyList.push(
+    url
+  );
 
 
   historyPosition =
@@ -467,13 +503,15 @@ function addHistory(url){
 }
 
 
-/* =========================================================
+/* =====================================================
    ERROR
-========================================================= */
+===================================================== */
 
 function showError(message){
 
   hideLoading();
+
+  cleanupBlob();
 
   page.src =
     "about:blank";
@@ -487,38 +525,60 @@ function showError(message){
 }
 
 
-/* =========================================================
-   CLEAN OLD BLOB
-========================================================= */
+/* =====================================================
+   ABSOLUTE URL
+===================================================== */
 
-function cleanupBlob(){
+function absoluteURL(
+  value,
+  base
+){
 
-  if(currentBlob){
+  try{
 
-    URL.revokeObjectURL(
-      currentBlob
-    );
+    return new URL(
+      value,
+      base
+    ).href;
 
-    currentBlob =
-      null;
+  }catch{
+
+    return value;
 
   }
 
 }
 
 
-/* =========================================================
-   REWRITE URLS
-========================================================= */
+/* =====================================================
+   PROXY URL
+===================================================== */
 
-function rewriteDocument(
-  html,
-  baseURL
+function proxyURL(
+  url
 ){
 
   /*
-   * Parse the returned document.
+   * This page fetches resources itself
+   * through Bare.
+   *
+   * Resources are therefore converted
+   * into blob URLs below.
    */
+
+  return url;
+
+}
+
+
+/* =====================================================
+   REWRITE HTML
+===================================================== */
+
+function rewriteHTML(
+  html,
+  targetURL
+){
 
   const parser =
     new DOMParser();
@@ -531,7 +591,7 @@ function rewriteDocument(
 
 
   /*
-   * Make relative links absolute.
+   * Make relative resources absolute.
    */
 
   const base =
@@ -540,7 +600,8 @@ function rewriteDocument(
     );
 
   base.href =
-    baseURL;
+    targetURL;
+
 
   if(doc.head){
 
@@ -552,8 +613,7 @@ function rewriteDocument(
 
 
   /*
-   * Remove CSP meta tags that would
-   * interfere with the generated document.
+   * Remove CSP meta tags.
    */
 
   doc
@@ -566,8 +626,8 @@ function rewriteDocument(
 
 
   /*
-   * Remove X-Frame-Options if it
-   * appears as a meta tag.
+   * Remove frame restrictions
+   * represented as meta tags.
    */
 
   doc
@@ -580,7 +640,111 @@ function rewriteDocument(
 
 
   /*
-   * Return serialized document.
+   * Remove problematic integrity
+   * attributes because fetched resources
+   * are reconstructed.
+   */
+
+  doc
+    .querySelectorAll(
+      "[integrity]"
+    )
+    .forEach(
+      el=>el.removeAttribute(
+        "integrity"
+      )
+    );
+
+
+  /*
+   * Rewrite ordinary links.
+   *
+   * The generated document cannot directly
+   * use the original URL because that would
+   * bypass Bare.
+   */
+
+  doc
+    .querySelectorAll(
+      "a[href]"
+    )
+    .forEach(
+      a=>{
+
+        const href =
+          a.getAttribute(
+            "href"
+          );
+
+        if(!href)
+          return;
+
+        if(
+          href.startsWith(
+            "javascript:"
+          ) ||
+          href.startsWith(
+            "#"
+          )
+        ){
+
+          return;
+
+        }
+
+        const absolute =
+          absoluteURL(
+            href,
+            targetURL
+          );
+
+        a.setAttribute(
+          "href",
+          "javascript:window.parent.postMessage({type:'bare-navigate',url:" +
+          JSON.stringify(absolute) +
+          "},'*');void(0)"
+        );
+
+      }
+    );
+
+
+  /*
+   * Forms.
+   */
+
+  doc
+    .querySelectorAll(
+      "form[action]"
+    )
+    .forEach(
+      form=>{
+
+        const action =
+          form.getAttribute(
+            "action"
+          );
+
+        if(!action)
+          return;
+
+        const absolute =
+          absoluteURL(
+            action,
+            targetURL
+          );
+
+        form.setAttribute(
+          "action",
+          absolute
+        );
+
+      }
+    );
+
+
+  /*
+   * Return complete document.
    */
 
   return (
@@ -591,95 +755,30 @@ function rewriteDocument(
 }
 
 
-/* =========================================================
-   BARE FETCH
-========================================================= */
+/* =====================================================
+   FETCH THROUGH BARE
+===================================================== */
 
 async function bareFetch(
-  target
+  url
 ){
 
   if(!bareClient){
 
     throw new Error(
-      "Bare Client is unavailable."
+      "Bare client is not available."
     );
 
   }
 
 
   showStatus(
-    "Connecting to Bare..."
+    "Connecting..."
   );
 
 
   const response =
     await bareClient.fetch(
-      target
-    );
-
-
-  return response;
-
-}
-
-
-/* =========================================================
-   LOAD BLOB / DATA
-========================================================= */
-
-async function loadDirectURL(
-  url
-){
-
-  cleanupBlob();
-
-
-  page.onload =
-    ()=>{
-      hideLoading();
-      showStatus("Loaded");
-    };
-
-
-  page.onerror =
-    ()=>{
-      showError(
-        "The Blob/Data URL could not be loaded."
-      );
-    };
-
-
-  page.src =
-    url;
-
-}
-
-
-/* =========================================================
-   LOAD THROUGH BARE
-========================================================= */
-
-async function loadThroughBare(
-  url
-){
-
-  if(!bareClient){
-
-    throw new Error(
-      "The Bare client could not be initialized."
-    );
-
-  }
-
-
-  showStatus(
-    "Fetching through Bare..."
-  );
-
-
-  const response =
-    await bareFetch(
       url
     );
 
@@ -693,13 +792,84 @@ async function loadThroughBare(
   }
 
 
+  return response;
+
+}
+
+
+/* =====================================================
+   LOAD HTML
+===================================================== */
+
+async function loadHTML(
+  response,
+  targetURL
+){
+
+  const html =
+    await response.text();
+
+
+  const rewritten =
+    rewriteHTML(
+      html,
+      targetURL
+    );
+
+
+  cleanupBlob();
+
+
+  const blob =
+    new Blob(
+      [
+        rewritten
+      ],
+      {
+        type:
+          "text/html;charset=utf-8"
+      }
+    );
+
+
+  currentBlob =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  return currentBlob;
+
+}
+
+
+/* =====================================================
+   LOAD THROUGH BARE
+===================================================== */
+
+async function loadThroughBare(
+  targetURL
+){
+
+  showStatus(
+    "Fetching through Bare..."
+  );
+
+
+  const response =
+    await bareFetch(
+      targetURL
+    );
+
+
   if(
     !response.ok
   ){
 
     throw new Error(
-      "Bare returned HTTP " +
-      response.status
+      "HTTP " +
+      response.status +
+      " returned by the destination."
     );
 
   }
@@ -712,7 +882,7 @@ async function loadThroughBare(
 
 
   /*
-   * HTML
+   * HTML page.
    */
 
   if(
@@ -724,53 +894,32 @@ async function loadThroughBare(
     )
   ){
 
-    const text =
-      await response.text();
-
-
-    const rewritten =
-      rewriteDocument(
-        text,
-        url
-      );
-
-
-    const blob =
-      new Blob(
-        [rewritten],
-        {
-          type:
-            "text/html;charset=utf-8"
-        }
-      );
-
-
-    cleanupBlob();
-
-
-    currentBlob =
-      URL.createObjectURL(
-        blob
+    const blobURL =
+      await loadHTML(
+        response,
+        targetURL
       );
 
 
     page.onload =
       ()=>{
         hideLoading();
-        showStatus("Loaded");
+        showStatus(
+          "Loaded"
+        );
       };
 
 
     page.onerror =
       ()=>{
         showError(
-          "The returned HTML could not be displayed."
+          "The proxied page could not be displayed."
         );
       };
 
 
     page.src =
-      currentBlob;
+      blobURL;
 
 
     return;
@@ -779,25 +928,27 @@ async function loadThroughBare(
 
 
   /*
-   * Other resources.
+   * Images, PDFs, text, etc.
    */
 
   const buffer =
     await response.arrayBuffer();
 
 
+  cleanupBlob();
+
+
   const blob =
     new Blob(
-      [buffer],
+      [
+        buffer
+      ],
       {
         type:
           contentType ||
           "application/octet-stream"
       }
     );
-
-
-  cleanupBlob();
 
 
   currentBlob =
@@ -809,14 +960,16 @@ async function loadThroughBare(
   page.onload =
     ()=>{
       hideLoading();
-      showStatus("Loaded");
+      showStatus(
+        "Loaded"
+      );
     };
 
 
   page.onerror =
     ()=>{
       showError(
-        "The returned resource could not be displayed."
+        "The proxied resource could not be displayed."
       );
     };
 
@@ -827,9 +980,9 @@ async function loadThroughBare(
 }
 
 
-/* =========================================================
+/* =====================================================
    LOAD URL
-========================================================= */
+===================================================== */
 
 async function loadURL(
   value,
@@ -871,70 +1024,75 @@ async function loadURL(
     "none";
 
 
+  /*
+   * Direct Blob URL.
+   */
+
+  if(
+    url.startsWith(
+      "blob:"
+    ) ||
+    url.startsWith(
+      "data:"
+    )
+  ){
+
+    cleanupBlob();
+
+    page.onload =
+      ()=>{
+        hideLoading();
+        showStatus(
+          "Loaded"
+        );
+      };
+
+    page.src =
+      url;
+
+    return;
+
+  }
+
+
   try{
 
-    /*
-     * Direct Blob/Data.
-     */
-
-    if(
-      url.startsWith(
-        "blob:"
-      ) ||
-      url.startsWith(
-        "data:"
-      )
-    ){
-
-      await loadDirectURL(
+    const hostname =
+      new URL(
         url
-      );
+      ).hostname;
 
-      return;
+    document.title =
+      "Web — " +
+      hostname;
 
-    }
+  }catch{
+
+    document.title =
+      "Web";
+
+  }
 
 
-    /*
-     * HTTP/HTTPS through Bare.
-     */
-
-    try{
-
-      document.title =
-        "Web — " +
-        new URL(
-          url
-        ).hostname;
-
-    }catch{
-
-      document.title =
-        "Web";
-
-    }
-
+  try{
 
     await loadThroughBare(
       url
     );
 
-
   }catch(e){
 
     console.error(
-      "Bare error:",
       e
     );
 
-
     showError(
-      "The destination could not be loaded through Bare.\n\n" +
+      "The site could not be loaded through Bare.\n\n" +
       e.message +
       "\n\n" +
-      "The public Bare endpoint may be unavailable, " +
-      "rate-limited, or the destination may require " +
-      "features that this simple frontend does not rewrite."
+      "The public Bare server may be unavailable, " +
+      "or this website may require functionality that " +
+      "a simple HTML-only Bare proxy cannot reproduce."
     );
 
   }
@@ -942,9 +1100,46 @@ async function loadURL(
 }
 
 
-/* =========================================================
+/* =====================================================
+   MESSAGES FROM IFRAME
+===================================================== */
+
+window.addEventListener(
+  "message",
+  event=>{
+
+    if(
+      !event.data ||
+      event.data.type !==
+      "bare-navigate"
+    ){
+
+      return;
+
+    }
+
+
+    if(
+      typeof event.data.url !==
+      "string"
+    ){
+
+      return;
+
+    }
+
+
+    loadURL(
+      event.data.url
+    );
+
+  }
+);
+
+
+/* =====================================================
    BACK
-========================================================= */
+===================================================== */
 
 document
   .getElementById(
@@ -979,9 +1174,9 @@ document
   };
 
 
-/* =========================================================
+/* =====================================================
    FORWARD
-========================================================= */
+===================================================== */
 
 document
   .getElementById(
@@ -1017,9 +1212,9 @@ document
   };
 
 
-/* =========================================================
+/* =====================================================
    RELOAD
-========================================================= */
+===================================================== */
 
 document
   .getElementById(
@@ -1047,9 +1242,9 @@ document
   };
 
 
-/* =========================================================
+/* =====================================================
    GO
-========================================================= */
+===================================================== */
 
 document
   .getElementById(
@@ -1070,7 +1265,8 @@ address.addEventListener(
   e=>{
 
     if(
-      e.key === "Enter"
+      e.key ===
+      "Enter"
     ){
 
       loadURL(
@@ -1083,16 +1279,17 @@ address.addEventListener(
 );
 
 
-/* =========================================================
+/* =====================================================
    HOME
-========================================================= */
+===================================================== */
 
 homeinput.addEventListener(
   "keydown",
   e=>{
 
     if(
-      e.key === "Enter"
+      e.key ===
+      "Enter"
     ){
 
       loadURL(
@@ -1105,9 +1302,9 @@ homeinput.addEventListener(
 );
 
 
-/* =========================================================
+/* =====================================================
    RETRY
-========================================================= */
+===================================================== */
 
 document
   .getElementById(
@@ -1128,9 +1325,9 @@ document
   };
 
 
-/* =========================================================
+/* =====================================================
    FULLSCREEN
-========================================================= */
+===================================================== */
 
 document
   .getElementById(
@@ -1167,9 +1364,9 @@ document
   };
 
 
-/* =========================================================
+/* =====================================================
    CLOAK
-========================================================= */
+===================================================== */
 
 document
   .getElementById(
@@ -1233,9 +1430,9 @@ document
   };
 
 
-/* =========================================================
+/* =====================================================
    KEYBOARD
-========================================================= */
+===================================================== */
 
 document.addEventListener(
   "keydown",
@@ -1243,7 +1440,8 @@ document.addEventListener(
 
     if(
       e.ctrlKey &&
-      e.key.toLowerCase() === "l"
+      e.key.toLowerCase() ===
+      "l"
     ){
 
       e.preventDefault();
@@ -1257,7 +1455,8 @@ document.addEventListener(
 
     if(
       e.altKey &&
-      e.key === "ArrowLeft"
+      e.key ===
+      "ArrowLeft"
     ){
 
       e.preventDefault();
@@ -1273,7 +1472,8 @@ document.addEventListener(
 
     if(
       e.altKey &&
-      e.key === "ArrowRight"
+      e.key ===
+      "ArrowRight"
     ){
 
       e.preventDefault();
@@ -1290,9 +1490,9 @@ document.addEventListener(
 );
 
 
-/* =========================================================
+/* =====================================================
    STARTUP
-========================================================= */
+===================================================== */
 
 if(bareClient){
 
@@ -1303,8 +1503,7 @@ if(bareClient){
 }else{
 
   showError(
-    "The Bare client could not be loaded.\n\n" +
-    "Check that the CDN is accessible."
+    "Bare transport failed to load."
   );
 
 }
