@@ -237,9 +237,9 @@ button:hover{background:#333}
 <div id="status"></div>
 
 <!-- UV client files -->
-<script src="/uv.bundle.js"></script>
-<script src="/uv.config.js"></script>
-<script src="/uv.handler.js"></script>
+<script src="../uv.bundle.js"></script>
+<script src="../uv.config.js"></script>
+<script src="../uv.handler.js"></script>
 
 <script>
 "use strict";
@@ -343,7 +343,7 @@ async function registerUV(){
 
   const registration=
     await navigator.serviceWorker.register(
-      "/uv.sw.js",
+      "./uv.sw.js",
       {
         scope:"/service/"
       }
@@ -431,10 +431,10 @@ async function loadURL(value,record=true){
       e.message+
       "\n\n"+
       "Make sure these files exist on the same HTTPS host:\n"+
-      "/uv.bundle.js\n"+
-      "/uv.config.js\n"+
-      "/uv.handler.js\n"+
-      "/uv.sw.js\n\n"+
+      "./uv.bundle.js\n"+
+      "./uv.config.js\n"+
+      "./uv.handler.js\n"+
+      "./uv.sw.js\n\n"+
       "A working Bare/transport server is also required."
     );
   }
