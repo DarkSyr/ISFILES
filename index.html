@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Web</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#080808;
+  color:#fff;
+  font-family:Arial,sans-serif
+}
+
+#bar{
+  height:58px;
+  background:#111;
+  border-bottom:1px solid #292929;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:8px;
+  position:relative;
+  z-index:1000
+}
+
+button{
+  height:40px;
+  min-width:40px;
+  border:0;
+  border-radius:8px;
+  background:#222;
+  color:#fff;
+  cursor:pointer;
+  font-size:16px
+}
+
+button:hover{
+  background:#333
+}
+
+#address{
+  flex:1;
+  min-width:0;
+  height:40px;
+  border:1px solid #333;
+  outline:none;
+  border-radius:8px;
+  background:#191919;
+  color:#fff;
+  padding:0 13px;
+  font-size:14px
+}
+
+#go{
+  background:#fff;
+  color:#000;
+  font-weight:bold
+}
+
+#page{
+  position:absolute;
+  top:58px;
+  left:0;
+  width:100%;
+  height:calc(100% - 58px);
+  border:0;
+  background:#fff
+}
+
+#home{
+  position:absolute;
+  inset:58px 0 0;
+  background:
+    radial-gradient(
+      circle at center,
+      #202020,
+      #080808 65%
+    );
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  z-index:20
+}
+
+#homebox{
+  width:min(700px,90%)
+}
+
+#home h1{
+  font-size:60px;
+  margin:0 0 10px
+}
+
+#home p{
+  color:#999;
+  margin-bottom:25px
+}
+
+#homeinput{
+  width:100%;
+  height:52px;
+  border-radius:10px;
+  border:1px solid #333;
+  background:#151515;
+  color:#fff;
+  padding:0 15px;
+  font-size:15px;
+  outline:none
+}
+
+#loading{
+  position:fixed;
+  inset:58px 0 0;
+  background:rgba(0,0,0,.75);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:5000
+}
+
+.spinner{
+  width:42px;
+  height:42px;
+  border:4px solid #444;
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .7s linear infinite
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg)
+  }
+}
+
+#error{
+  position:fixed;
+  inset:58px 0 0;
+  background:#080808;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  z-index:4000;
+  padding:30px
+}
+
+#errorbox{
+  max-width:700px
+}
+
+#error h2{
+  font-size:28px
+}
+
+#error p{
+  color:#aaa;
+  line-height:1.6;
+  white-space:pre-wrap
+}
+
+#error button{
+  margin-top:10px
+}
+
+#status{
+  position:fixed;
+  bottom:15px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#222;
+  border:1px solid #444;
+  padding:8px 14px;
+  border-radius:20px;
+  display:none;
+  z-index:9999;
+  font-size:12px
+}
+</style>
+</head>
+
+<body>
+
+<div id="bar">
+
+<button id="back" title="Back">←</button>
+
+<button id="forward" title="Forward">→</button>
+
+<button id="reload" title="Reload">↻</button>
+
+<input
+  id="address"
+  placeholder="Enter URL or search..."
+  autocomplete="off"
+  spellcheck="false"
+>
+
+<button id="go">Go</button>
+
+<button id="cloak" title="Cloak">◉</button>
+
+<button id="fullscreen" title="Fullscreen">⛶</button>
+
+</div>
+
+
+<iframe
+  id="page"
+  allow="
+    fullscreen;
+    autoplay;
+    clipboard-read;
+    clipboard-write;
+    camera;
+    microphone;
+    geolocation;
+    payment
+  "
+  referrerpolicy="no-referrer"
+  allowfullscreen>
+</iframe>
+
+
+<div id="home">
+
+  <div id="homebox">
+
+    <h1>Web</h1>
+
+    <p>Scramjet Web Proxy</p>
+
+    <input
+      id="homeinput"
+      placeholder="https://example.com"
+      autocomplete="off"
+    >
+
+  </div>
+
+</div>
+
+
+<div id="loading">
+  <div class="spinner"></div>
+</div>
+
+
+<div id="error">
+
+  <div id="errorbox">
+
+    <h2>Could not load this website</h2>
+
+    <p id="errortext"></p>
+
+    <button id="retry">
+      Retry
+    </button>
+
+  </div>
+
+</div>
+
+
+<div id="status"></div>
+
+
+<script type="module">
+
+"use strict";
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const page =
+  document.getElementById("page");
+
+const address =
+  document.getElementById("address");
+
+const home =
+  document.getElementById("home");
+
+const homeinput =
+  document.getElementById("homeinput");
+
+const loading =
+  document.getElementById("loading");
+
+const error =
+  document.getElementById("error");
+
+const errortext =
+  document.getElementById("errortext");
+
+const status =
+  document.getElementById("status");
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentURL = "";
+
+let historyList = [];
+
+let historyPosition = -1;
+
+let scramjet = null;
+
+let scramjetFrame = null;
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function showStatus(text){
+
+  status.textContent = text;
+
+  status.style.display = "block";
+
+  clearTimeout(status.timer);
+
+  status.timer =
+    setTimeout(() => {
+
+      status.style.display =
+        "none";
+
+    }, 2200);
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function showLoading(){
+
+  loading.style.display =
+    "flex";
+
+}
+
+function hideLoading(){
+
+  loading.style.display =
+    "none";
+
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+function showError(message){
+
+  hideLoading();
+
+  error.style.display =
+    "flex";
+
+  errortext.textContent =
+    message;
+
+}
+
+
+/* =========================================================
+   URL
+========================================================= */
+
+function normalizeURL(value){
+
+  value =
+    String(value || "")
+      .trim();
+
+  if(!value)
+    return null;
+
+
+  if(
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ){
+
+    return value;
+
+  }
+
+
+  if(
+    !value.includes(" ") &&
+    value.includes(".")
+  ){
+
+    return "https://" +
+      value;
+
+  }
+
+
+  return (
+    "https://www.google.com/search?q=" +
+    encodeURIComponent(value)
+  );
+
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function addHistory(url){
+
+  if(
+    historyPosition >= 0 &&
+    historyList[
+      historyPosition
+    ] === url
+  ){
+
+    return;
+
+  }
+
+
+  historyList =
+    historyList.slice(
+      0,
+      historyPosition + 1
+    );
+
+
+  historyList.push(url);
+
+
+  historyPosition =
+    historyList.length - 1;
+
+}
+
+
+/* =========================================================
+   SERVICE WORKER
+========================================================= */
+
+async function registerServiceWorker(){
+
+  if(
+    !("serviceWorker" in navigator)
+  ){
+
+    throw new Error(
+      "This browser does not support Service Workers."
+    );
+
+  }
+
+
+  /*
+   * IMPORTANT:
+   *
+   * "./sw.js" is deliberately relative.
+   *
+   * If this page is:
+   *
+   * /p/HG66NK2B/
+   *
+   * the browser requests:
+   *
+   * /p/HG66NK2B/sw.js
+   */
+
+  const registration =
+    await navigator.serviceWorker.register(
+      "./sw.js",
+      {
+        scope: "./"
+      }
+    );
+
+
+  /*
+   * Wait for installation.
+   */
+
+  await navigator.serviceWorker.ready;
+
+
+  /*
+   * The newly installed worker may not
+   * control this page until controllerchange.
+   */
+
+  if(
+    !navigator.serviceWorker.controller
+  ){
+
+    await new Promise(
+      resolve => {
+
+        const timeout =
+          setTimeout(
+            resolve,
+            10000
+          );
+
+        navigator.serviceWorker
+          .addEventListener(
+            "controllerchange",
+            () => {
+
+              clearTimeout(
+                timeout
+              );
+
+              resolve();
+
+            },
+            {
+              once:true
+            }
+          );
+
+      }
+    );
+
+  }
+
+
+  return registration;
+
+}
+
+
+/* =========================================================
+   SCRAMJET INITIALIZATION
+========================================================= */
+
+async function initializeScramjet(){
+
+  if(scramjet)
+    return scramjet;
+
+
+  showStatus(
+    "Starting Scramjet..."
+  );
+
+
+  /*
+   * Your Scramjet controller build needs
+   * to be available locally.
+   *
+   * Example:
+   *
+   * ./scramjet/controller.js
+   */
+
+  const controllerModule =
+    await import(
+      "./scramjet/controller.js"
+    );
+
+
+  const Controller =
+    controllerModule.Controller;
+
+
+  if(
+    typeof Controller !==
+    "function"
+  ){
+
+    throw new Error(
+      "Scramjet Controller was not found."
+    );
+
+  }
+
+
+  /*
+   * Start the service worker first.
+   */
+
+  await registerServiceWorker();
+
+
+  /*
+   * The transport must be supplied by
+   * your Scramjet deployment.
+   */
+
+  let transport;
+
+
+  try{
+
+    const transportModule =
+      await import(
+        "./scramjet/transport.js"
+      );
+
+
+    if(
+      transportModule.ProxyTransport
+    ){
+
+      transport =
+        new transportModule.ProxyTransport();
+
+    }
+
+  }catch(e){
+
+    console.warn(
+      "Transport module unavailable:",
+      e
+    );
+
+  }
+
+
+  /*
+   * Create controller.
+   */
+
+  if(transport){
+
+    scramjet =
+      new Controller({
+        transport
+      });
+
+  }else{
+
+    scramjet =
+      new Controller();
+
+  }
+
+
+  /*
+   * Wait until initialized.
+   */
+
+  if(
+    typeof scramjet.init ===
+    "function"
+  ){
+
+    await scramjet.init();
+
+  }
+
+
+  return scramjet;
+
+}
+
+
+/* =========================================================
+   LOAD
+========================================================= */
+
+async function loadURL(
+  value,
+  record = true
+){
+
+  const url =
+    normalizeURL(value);
+
+  if(!url)
+    return;
+
+
+  showLoading();
+
+  error.style.display =
+    "none";
+
+
+  if(record){
+
+    addHistory(url);
+
+  }
+
+
+  currentURL =
+    url;
+
+  address.value =
+    url;
+
+  home.style.display =
+    "none";
+
+
+  try{
+
+    document.title =
+      "Web — " +
+      new URL(url).hostname;
+
+  }catch{
+
+    document.title =
+      "Web";
+
+  }
+
+
+  try{
+
+    const controller =
+      await initializeScramjet();
+
+
+    showStatus(
+      "Creating proxy frame..."
+    );
+
+
+    /*
+     * Current Scramjet uses a Frame
+     * rather than manually calling
+     * __uv$config.encodeUrl().
+     */
+
+    if(
+      typeof controller.createFrame ===
+      "function"
+    ){
+
+      /*
+       * Remove the previous frame.
+       */
+
+      if(scramjetFrame){
+
+        try{
+
+          scramjetFrame.frame.remove();
+
+        }catch{}
+
+      }
+
+
+      scramjetFrame =
+        controller.createFrame(
+          page
+        );
+
+
+      if(
+        typeof scramjetFrame.go ===
+        "function"
+      ){
+
+        await scramjetFrame.go(url);
+
+      }else if(
+        typeof scramjetFrame.navigate ===
+        "function"
+      ){
+
+        await scramjetFrame.navigate(
+          url
+        );
+
+      }else{
+
+        throw new Error(
+          "Scramjet Frame navigation API was not found."
+        );
+
+      }
+
+    }else{
+
+      throw new Error(
+        "This Scramjet controller build does not expose createFrame()."
+      );
+
+    }
+
+
+    hideLoading();
+
+    showStatus(
+      "Loaded"
+    );
+
+
+  }catch(e){
+
+    console.error(
+      "Scramjet:",
+      e
+    );
+
+
+    showError(
+      "Scramjet could not start.\n\n" +
+      e.message +
+      "\n\n" +
+      "Required files must be available relative " +
+      "to this page:\n\n" +
+      "./sw.js\n" +
+      "./scramjet/controller.js\n" +
+      "./scramjet/transport.js\n\n" +
+      "The transport must also be connected to a " +
+      "working proxy backend."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   BACK
+========================================================= */
+
+document
+  .getElementById("back")
+  .onclick = () => {
+
+    if(historyPosition <= 0){
+
+      showStatus(
+        "No previous page"
+      );
+
+      return;
+
+    }
+
+
+    historyPosition--;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   FORWARD
+========================================================= */
+
+document
+  .getElementById("forward")
+  .onclick = () => {
+
+    if(
+      historyPosition >=
+      historyList.length - 1
+    ){
+
+      showStatus(
+        "No next page"
+      );
+
+      return;
+
+    }
+
+
+    historyPosition++;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   RELOAD
+========================================================= */
+
+document
+  .getElementById("reload")
+  .onclick = () => {
+
+    if(!currentURL){
+
+      showStatus(
+        "Nothing to reload"
+      );
+
+      return;
+
+    }
+
+
+    loadURL(
+      currentURL,
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   GO
+========================================================= */
+
+document
+  .getElementById("go")
+  .onclick = () => {
+
+    loadURL(
+      address.value
+    );
+
+  };
+
+
+address.addEventListener(
+  "keydown",
+  event => {
+
+    if(
+      event.key === "Enter"
+    ){
+
+      loadURL(
+        address.value
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+homeinput.addEventListener(
+  "keydown",
+  event => {
+
+    if(
+      event.key === "Enter"
+    ){
+
+      loadURL(
+        homeinput.value
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   RETRY
+========================================================= */
+
+document
+  .getElementById("retry")
+  .onclick = () => {
+
+    if(currentURL){
+
+      loadURL(
+        currentURL,
+        false
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+document
+  .getElementById("fullscreen")
+  .onclick = async () => {
+
+    try{
+
+      if(
+        !document.fullscreenElement
+      ){
+
+        await document
+          .documentElement
+          .requestFullscreen();
+
+      }else{
+
+        await document
+          .exitFullscreen();
+
+      }
+
+    }catch{
+
+      showStatus(
+        "Fullscreen unavailable"
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   CLOAK
+========================================================= */
+
+document
+  .getElementById("cloak")
+  .onclick = () => {
+
+    document.title =
+      "Google";
+
+
+    let icon =
+      document.querySelector(
+        "link[rel='icon']"
+      );
+
+
+    if(!icon){
+
+      icon =
+        document.createElement(
+          "link"
+        );
+
+      icon.rel =
+        "icon";
+
+      document.head.appendChild(
+        icon
+      );
+
+    }
+
+
+    icon.href =
+      "data:image/svg+xml," +
+      encodeURIComponent(`
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 64 64">
+
+          <circle
+            cx="32"
+            cy="32"
+            r="30"
+            fill="white"/>
+
+          <path
+            d="M32 10a22 22 0 1 0 22 22H32z"
+            fill="#4285f4"/>
+
+        </svg>
+      `);
+
+
+    showStatus(
+      "Cloaked"
+    );
+
+  };
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if(
+      event.ctrlKey &&
+      event.key.toLowerCase() === "l"
+    ){
+
+      event.preventDefault();
+
+      address.focus();
+
+      address.select();
+
+    }
+
+
+    if(
+      event.altKey &&
+      event.key === "ArrowLeft"
+    ){
+
+      event.preventDefault();
+
+      document
+        .getElementById("back")
+        .click();
+
+    }
+
+
+    if(
+      event.altKey &&
+      event.key === "ArrowRight"
+    ){
+
+      event.preventDefault();
+
+      document
+        .getElementById("forward")
+        .click();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   START
+========================================================= */
+
+showStatus(
+  "Ready"
+);
+
+</script>
+
+</body>
+</html>
