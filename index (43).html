@@ -58,10 +58,6 @@ button:hover{
   font-size:14px
 }
 
-#address:focus{
-  border-color:#666
-}
-
 #go{
   background:#fff;
   color:#000;
@@ -72,8 +68,6 @@ button:hover{
   position:absolute;
   top:58px;
   left:0;
-  right:0;
-  bottom:0;
   width:100%;
   height:calc(100% - 58px);
   border:0;
@@ -187,9 +181,9 @@ button:hover{
 
 <div id="bar">
 
-<button id="back" title="Back">←</button>
-<button id="forward" title="Forward">→</button>
-<button id="reload" title="Reload">↻</button>
+<button id="back">←</button>
+<button id="forward">→</button>
+<button id="reload">↻</button>
 
 <input
  id="address"
@@ -199,16 +193,16 @@ button:hover{
 >
 
 <button id="go">Go</button>
-<button id="cloak" title="Cloak">◉</button>
-<button id="fullscreen" title="Fullscreen">⛶</button>
+<button id="cloak">◉</button>
+<button id="fullscreen">⛶</button>
 
 </div>
 
 <iframe
-  id="page"
-  allow="fullscreen; autoplay; clipboard-read; clipboard-write"
-  referrerpolicy="no-referrer"
-></iframe>
+ id="page"
+ allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+ referrerpolicy="no-referrer">
+</iframe>
 
 <div id="home">
 
@@ -216,9 +210,7 @@ button:hover{
 
 <h1>Web</h1>
 
-<p>
-Static Web Viewer
-</p>
+<p>Static Blob Web Viewer</p>
 
 <input
  id="homeinput"
@@ -231,7 +223,7 @@ Static Web Viewer
 </div>
 
 <div id="loading">
-  <div class="spinner"></div>
+<div class="spinner"></div>
 </div>
 
 <div id="error">
@@ -253,324 +245,193 @@ Static Web Viewer
 <script>
 "use strict";
 
-const page =
-  document.getElementById("page");
+const page=document.getElementById("page");
+const address=document.getElementById("address");
+const home=document.getElementById("home");
+const homeinput=document.getElementById("homeinput");
+const loading=document.getElementById("loading");
+const error=document.getElementById("error");
+const errortext=document.getElementById("errortext");
+const status=document.getElementById("status");
 
-const address =
-  document.getElementById("address");
-
-const home =
-  document.getElementById("home");
-
-const homeinput =
-  document.getElementById("homeinput");
-
-const loading =
-  document.getElementById("loading");
-
-const error =
-  document.getElementById("error");
-
-const errortext =
-  document.getElementById("errortext");
-
-const status =
-  document.getElementById("status");
-
-
-let currentURL = "";
-
-let historyList = [];
-
-let historyPosition = -1;
-
-
-/* ================================
-   STATUS
-================================ */
+let currentURL="";
+let historyList=[];
+let historyPosition=-1;
 
 function showStatus(text){
 
-  status.textContent = text;
-
-  status.style.display = "block";
+  status.textContent=text;
+  status.style.display="block";
 
   clearTimeout(status.timer);
 
-  status.timer = setTimeout(()=>{
-    status.style.display = "none";
+  status.timer=setTimeout(()=>{
+    status.style.display="none";
   },1800);
-
 }
 
-
-/* ================================
-   LOADING
-================================ */
-
 function showLoading(){
-  loading.style.display = "flex";
+  loading.style.display="flex";
 }
 
 function hideLoading(){
-  loading.style.display = "none";
+  loading.style.display="none";
 }
-
-
-/* ================================
-   URL NORMALIZATION
-================================ */
 
 function normalizeURL(value){
 
-  value = String(value || "").trim();
+  value=String(value||"").trim();
 
-  if(!value)
-    return null;
+  if(!value) return null;
 
-
-  /*
-   * Blob URLs
-   *
-   * These MUST NOT be sent through UV.
-   */
-  if(value.startsWith("blob:")){
+  if(
+    value.startsWith("blob:") ||
+    value.startsWith("data:")
+  ){
     return value;
   }
 
-
-  /*
-   * Data URLs
-   */
-  if(value.startsWith("data:")){
-    return value;
-  }
-
-
-  /*
-   * HTTP / HTTPS
-   */
   if(
     value.startsWith("http://") ||
     value.startsWith("https://")
   ){
-
     return value;
-
   }
 
-
-  /*
-   * Looks like a domain
-   */
   if(
     !value.includes(" ") &&
     value.includes(".")
   ){
-
-    return "https://" + value;
-
+    return "https://"+value;
   }
 
-
-  /*
-   * Search
-   */
-  return (
-    "https://www.google.com/search?q=" +
-    encodeURIComponent(value)
-  );
-
+  return "https://www.google.com/search?q="+
+    encodeURIComponent(value);
 }
-
-
-/* ================================
-   HISTORY
-================================ */
 
 function addHistory(url){
 
   if(
-    historyPosition >= 0 &&
-    historyList[historyPosition] === url
+    historyPosition>=0 &&
+    historyList[historyPosition]===url
   ){
     return;
   }
 
-  historyList =
-    historyList.slice(
-      0,
-      historyPosition + 1
-    );
+  historyList=historyList.slice(
+    0,
+    historyPosition+1
+  );
 
   historyList.push(url);
 
-  historyPosition =
-    historyList.length - 1;
+  historyPosition=historyList.length-1;
 }
 
+function showError(message){
 
-/* ================================
-   ERROR
-================================ */
+  hideLoading();
 
-function showProxyError(message){
+  page.src="about:blank";
 
-  page.src = "about:blank";
+  error.style.display="flex";
 
-  error.style.display = "flex";
-
-  errortext.textContent = message;
-
+  errortext.textContent=message;
 }
 
+function loadURL(value,record=true){
 
-/* ================================
-   LOAD
-================================ */
+  const url=normalizeURL(value);
 
-async function loadURL(
-  value,
-  record = true
-){
-
-  const url =
-    normalizeURL(value);
-
-  if(!url)
-    return;
-
+  if(!url) return;
 
   showLoading();
 
-  error.style.display = "none";
-
+  error.style.display="none";
 
   if(record){
     addHistory(url);
   }
 
+  currentURL=url;
 
-  currentURL = url;
+  address.value=url;
 
-  address.value = url;
-
-  home.style.display = "none";
-
+  home.style.display="none";
 
   /*
-   * BLOB / DATA
-   *
-   * These can be loaded directly.
+   * Blob/data URLs can be opened directly.
    */
   if(
     url.startsWith("blob:") ||
     url.startsWith("data:")
   ){
 
-    page.src = url;
+    page.src=url;
 
-    page.onload = ()=>{
-
+    page.onload=()=>{
       hideLoading();
-
       showStatus("Loaded");
-
     };
 
-    page.onerror = ()=>{
-
-      hideLoading();
-
-      showProxyError(
-        "The blob/data URL could not be loaded."
+    page.onerror=()=>{
+      showError(
+        "The Blob/Data URL could not be loaded."
       );
-
     };
 
     return;
   }
 
-
   /*
-   * Normal website.
+   * Normal websites are opened directly.
    *
-   * This is a DIRECT iframe navigation,
-   * NOT a proxy.
+   * This is NOT a proxy.
    */
-  page.onload = ()=>{
-
+  page.onload=()=>{
     hideLoading();
-
     showStatus("Loaded");
-
   };
 
-
-  page.onerror = ()=>{
-
-    hideLoading();
-
-    showProxyError(
-      "The website could not be loaded."
+  page.onerror=()=>{
+    showError(
+      "The destination could not be displayed in the iframe.\n\n"+
+      "The website may block iframe embedding with "+
+      "X-Frame-Options or Content-Security-Policy."
     );
-
   };
-
 
   try{
-
-    document.title =
-      "Web — " +
-      new URL(url).hostname;
-
+    document.title=
+      "Web — "+new URL(url).hostname;
   }catch{
-
-    document.title = "Web";
-
+    document.title="Web";
   }
 
-
-  page.src = url;
-
+  page.src=url;
 
   /*
-   * Some sites intentionally refuse
-   * iframe embedding with X-Frame-Options
-   * or CSP frame-ancestors.
+   * Don't leave the loading overlay indefinitely
+   * on sites that block iframe embedding.
    */
   setTimeout(()=>{
-
     if(
-      page.src === url &&
-      loading.style.display !== "none"
+      loading.style.display!=="none" &&
+      currentURL===url
     ){
-
       hideLoading();
-
     }
-
-  },10000);
-
+  },8000);
 }
 
+/* Back */
 
-/* ================================
-   BACK
-================================ */
+document.getElementById("back").onclick=()=>{
 
-document
-.getElementById("back")
-.onclick = ()=>{
-
-  if(historyPosition <= 0){
-
+  if(historyPosition<=0){
     showStatus("No previous page");
-
     return;
-
   }
-
 
   historyPosition--;
 
@@ -578,29 +439,18 @@ document
     historyList[historyPosition],
     false
   );
-
 };
 
+/* Forward */
 
-/* ================================
-   FORWARD
-================================ */
-
-document
-.getElementById("forward")
-.onclick = ()=>{
+document.getElementById("forward").onclick=()=>{
 
   if(
-    historyPosition >=
-    historyList.length - 1
+    historyPosition>=historyList.length-1
   ){
-
     showStatus("No next page");
-
     return;
-
   }
-
 
   historyPosition++;
 
@@ -608,105 +458,60 @@ document
     historyList[historyPosition],
     false
   );
-
 };
 
+/* Reload */
 
-/* ================================
-   RELOAD
-================================ */
+document.getElementById("reload").onclick=()=>{
 
-document
-.getElementById("reload")
-.onclick = ()=>{
-
-  if(currentURL){
-
-    /*
-     * For blob/data URLs this simply
-     * reloads the current resource.
-     */
-    page.src = currentURL;
-
-    showLoading();
-
+  if(!currentURL){
+    showStatus("Nothing to reload");
+    return;
   }
 
+  showLoading();
+
+  page.src=currentURL;
 };
 
+/* Go */
 
-/* ================================
-   ADDRESS
-================================ */
-
-document
-.getElementById("go")
-.onclick = ()=>{
-
+document.getElementById("go").onclick=()=>{
   loadURL(address.value);
-
 };
-
 
 address.addEventListener(
   "keydown",
-  event=>{
-
-    if(event.key === "Enter"){
-
+  e=>{
+    if(e.key==="Enter"){
       loadURL(address.value);
-
     }
-
   }
 );
 
-
-/* ================================
-   HOME
-================================ */
+/* Home */
 
 homeinput.addEventListener(
   "keydown",
-  event=>{
-
-    if(event.key === "Enter"){
-
+  e=>{
+    if(e.key==="Enter"){
       loadURL(homeinput.value);
-
     }
-
   }
 );
 
+/* Retry */
 
-/* ================================
-   RETRY
-================================ */
-
-document
-.getElementById("retry")
-.onclick = ()=>{
+document.getElementById("retry").onclick=()=>{
 
   if(currentURL){
-
-    loadURL(
-      currentURL,
-      false
-    );
-
+    loadURL(currentURL,false);
   }
-
 };
 
+/* Fullscreen */
 
-/* ================================
-   FULLSCREEN
-================================ */
-
-document
-.getElementById("fullscreen")
-.onclick = async()=>{
+document.getElementById("fullscreen").onclick=async()=>{
 
   try{
 
@@ -723,125 +528,93 @@ document
 
   }catch{
 
-    showStatus(
-      "Fullscreen unavailable"
-    );
+    showStatus("Fullscreen unavailable");
 
   }
-
 };
 
+/* Cloak */
 
-/* ================================
-   CLOAK
-================================ */
+document.getElementById("cloak").onclick=()=>{
 
-document
-.getElementById("cloak")
-.onclick = ()=>{
+  document.title="Google";
 
-  document.title = "Google";
-
-
-  let icon =
-    document.querySelector(
-      "link[rel='icon']"
-    );
-
+  let icon=document.querySelector(
+    "link[rel='icon']"
+  );
 
   if(!icon){
 
-    icon =
-      document.createElement("link");
+    icon=document.createElement("link");
 
-    icon.rel = "icon";
+    icon.rel="icon";
 
     document.head.appendChild(icon);
-
   }
 
-
-  icon.href =
-    "data:image/svg+xml," +
-    encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg"
-       viewBox="0 0 64 64">
-       <circle
-        cx="32"
-        cy="32"
-        r="30"
-        fill="white"/>
-       <path
-        d="M32 10a22 22 0 1 0 22 22H32z"
-        fill="#4285f4"/>
-      </svg>`
-    );
-
+  icon.href=
+    "data:image/svg+xml,"+
+    encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg"
+           viewBox="0 0 64 64">
+        <circle
+          cx="32"
+          cy="32"
+          r="30"
+          fill="white"/>
+        <path
+          d="M32 10a22 22 0 1 0 22 22H32z"
+          fill="#4285f4"/>
+      </svg>
+    `);
 
   showStatus("Cloaked");
-
 };
 
-
-/* ================================
-   KEYBOARD
-================================ */
+/* Keyboard */
 
 document.addEventListener(
   "keydown",
-  event=>{
+  e=>{
 
     if(
-      event.ctrlKey &&
-      event.key.toLowerCase() === "l"
+      e.ctrlKey &&
+      e.key.toLowerCase()==="l"
     ){
 
-      event.preventDefault();
+      e.preventDefault();
 
       address.focus();
-
       address.select();
-
     }
 
-
     if(
-      event.altKey &&
-      event.key === "ArrowLeft"
+      e.altKey &&
+      e.key==="ArrowLeft"
     ){
 
-      event.preventDefault();
+      e.preventDefault();
 
       document
         .getElementById("back")
         .click();
-
     }
 
-
     if(
-      event.altKey &&
-      event.key === "ArrowRight"
+      e.altKey &&
+      e.key==="ArrowRight"
     ){
 
-      event.preventDefault();
+      e.preventDefault();
 
       document
         .getElementById("forward")
         .click();
-
     }
-
   }
 );
 
-
-/* ================================
-   INITIAL STATE
-================================ */
-
 showStatus("Ready");
-
 </script>
 
 </body>
