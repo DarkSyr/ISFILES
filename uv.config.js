@@ -1,18 +1,10 @@
-/* Ultraviolet client config — static hosting + remote Bare */
 self.__uv$config = {
-  prefix: "/service/",
-  /*
-   * Bare endpoint(s). Classic UV accepts a string or an array.
-   * Replace with any working Bare v1/v2 server if these are down.
-   * You do NOT need to run Bare yourself if you use a public one.
-   */
-  bare: [
-    "https://uv.holyubofficial.net/"
-  ],
-  encodeUrl: Ultraviolet.codec.xor.encode,
-  decodeUrl: Ultraviolet.codec.xor.decode,
-  handler: "/uv.handler.js",
-  bundle: "/uv.bundle.js",
-  config: "/uv.config.js",
-  sw: "/uv.sw.js",
+    prefix: "/p/8GZR8E42/service/",
+    bare: "/p/8GZR8E42/bare/",
+    encodeUrl: Ultraviolet.codec.xor.encode,
+    decodeUrl: Ultraviolet.codec.xor.decode,
+    handler: "/p/8GZR8E42/uv.handler.js",
+    bundle: "/p/8GZR8E42/uv.bundle.js",
+    config: "/p/8GZR8E42/uv.config.js",
+    sw: "/p/8GZR8E42/uv.sw.js"
 };
