@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Web</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#080808;
+  color:#fff;
+  font-family:Arial,sans-serif
+}
+
+#bar{
+  height:58px;
+  background:#111;
+  border-bottom:1px solid #292929;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:8px;
+  position:relative;
+  z-index:1000
+}
+
+button{
+  height:40px;
+  min-width:40px;
+  border:0;
+  border-radius:8px;
+  background:#222;
+  color:#fff;
+  cursor:pointer;
+  font-size:16px
+}
+
+button:hover{
+  background:#333
+}
+
+#address{
+  flex:1;
+  min-width:0;
+  height:40px;
+  border:1px solid #333;
+  outline:none;
+  border-radius:8px;
+  background:#191919;
+  color:#fff;
+  padding:0 13px;
+  font-size:14px
+}
+
+#address:focus{
+  border-color:#666
+}
+
+#go{
+  background:#fff;
+  color:#000;
+  font-weight:bold
+}
+
+#page{
+  position:absolute;
+  top:58px;
+  left:0;
+  right:0;
+  bottom:0;
+  width:100%;
+  height:calc(100% - 58px);
+  border:0;
+  background:#fff;
+}
+  
+#home{
+  position:absolute;
+  inset:58px 0 0;
+  background:
+    radial-gradient(circle at center,#202020,#080808 65%);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  z-index:20
+}
+
+#homebox{
+  width:min(700px,90%)
+}
+
+#home h1{
+  font-size:60px;
+  margin:0 0 10px
+}
+
+#home p{
+  color:#999;
+  margin-bottom:25px
+}
+
+#homeinput{
+  width:100%;
+  height:52px;
+  border-radius:10px;
+  border:1px solid #333;
+  background:#151515;
+  color:#fff;
+  padding:0 15px;
+  font-size:15px;
+  outline:none
+}
+
+#loading{
+  position:fixed;
+  inset:58px 0 0;
+  background:rgba(0,0,0,.75);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:5000
+}
+
+.spinner{
+  width:42px;
+  height:42px;
+  border:4px solid #444;
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .7s linear infinite
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg)
+  }
+}
+
+#error{
+  position:fixed;
+  inset:58px 0 0;
+  background:#080808;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  z-index:4000;
+  padding:30px
+}
+
+#errorbox{
+  max-width:650px
+}
+
+#error h2{
+  font-size:28px
+}
+
+#error p{
+  color:#aaa;
+  line-height:1.6
+}
+
+#status{
+  position:fixed;
+  bottom:15px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#222;
+  border:1px solid #444;
+  padding:8px 14px;
+  border-radius:20px;
+  display:none;
+  z-index:9999;
+  font-size:12px
+}
+</style>
+</head>
+
+<body>
+
+<div id="bar">
+
+<button id="back" title="Back">←</button>
+<button id="forward" title="Forward">→</button>
+<button id="reload" title="Reload">↻</button>
+
+<input
+ id="address"
+ placeholder="Enter URL or search..."
+ autocomplete="off"
+ spellcheck="false"
+>
+
+<button id="go">Go</button>
+<button id="cloak" title="Cloak">◉</button>
+<button id="fullscreen" title="Fullscreen">⛶</button>
+
+</div>
+
+<iframe
+  id="page"
+  allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+  referrerpolicy="no-referrer"
+></iframe>
+
+<div id="home">
+
+<div id="homebox">
+
+<h1>Web</h1>
+
+<p>
+Ultraviolet Web Proxy
+</p>
+
+<input
+ id="homeinput"
+ placeholder="https://example.com"
+ autocomplete="off"
+>
+
+</div>
+
+</div>
+
+<div id="loading">
+<div class="spinner"></div>
+</div>
+
+<div id="error">
+
+<div id="errorbox">
+
+<h2>Could not load this website</h2>
+
+<p id="errortext"></p>
+
+<button id="retry">Retry</button>
+
+</div>
+
+</div>
+
+<div id="status"></div>
+
+
+<!--
+===========================================================
+ULTRAVIOLET
+===========================================================
+
+These files MUST exist on the SAME origin as this page.
+
+Example:
+
+/uv/uv.bundle.js
+/uv/uv.handler.js
+/uv/uv.config.js
+/uv/uv.sw.js
+
+Do NOT load uv.sw.js from another domain.
+===========================================================
+-->
+
+<script src="https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv/uv.bundle.js"></script>
+<script src="https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv/uv.config.js"></script>
+<script src="https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv/uv.handler.js"></script>
+
+
+<script>
+"use strict";
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const page =
+  document.getElementById("page");
+
+const address =
+  document.getElementById("address");
+
+const home =
+  document.getElementById("home");
+
+const homeinput =
+  document.getElementById("homeinput");
+
+const loading =
+  document.getElementById("loading");
+
+const error =
+  document.getElementById("error");
+
+const errortext =
+  document.getElementById("errortext");
+
+const status =
+  document.getElementById("status");
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentURL = "";
+
+let historyList = [];
+
+let historyPosition = -1;
+
+let uvReady = false;
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function showStatus(text){
+
+  status.textContent = text;
+
+  status.style.display = "block";
+
+  clearTimeout(status.timer);
+
+  status.timer =
+    setTimeout(()=>{
+      status.style.display = "none";
+    },1800);
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function showLoading(){
+
+  loading.style.display = "flex";
+
+}
+
+function hideLoading(){
+
+  loading.style.display = "none";
+
+}
+
+
+/* =========================================================
+   URL IZATION
+========================================================= */
+
+function normalizeURL(value){
+  value = String(value || "").trim();
+
+  if (!value) return null;
+
+  /* Allow blob URLs */
+  if (value.startsWith("blob:")) {
+    return value;
+  }
+
+  /* Allow data URLs */
+  if (value.startsWith("data:")) {
+    return value;
+  }
+
+  /* Normal URLs */
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ) {
+    return value;
+  }
+
+  /* Domain */
+  if (
+    !value.includes(" ") &&
+    value.includes(".")
+  ) {
+    return "https://" + value;
+  }
+
+  /* Search */
+  return (
+    "https://www.google.com/search?q=" +
+    encodeURIComponent(value)
+  );
+}
+
+
+async function loadURL(value, record = true){
+
+  const url = normalizeURL(value);
+
+  if (!url) return;
+
+  showLoading();
+  error.style.display = "none";
+
+  try {
+
+    if (record) {
+      addHistory(url);
+    }
+
+    currentURL = url;
+    address.value = url;
+    home.style.display = "none";
+
+    /*
+     * BLOB / DATA URLs cannot be encoded by UV.
+     * Load them directly instead.
+     */
+    if (
+      url.startsWith("blob:") ||
+      url.startsWith("data:")
+    ) {
+
+      page.src = url;
+
+      page.onload = () => {
+        hideLoading();
+        showStatus("Loaded");
+      };
+
+      page.onerror = () => {
+        hideLoading();
+        showProxyError(
+          "The blob/data URL could not be loaded."
+        );
+      };
+
+      return;
+    }
+
+
+    /*
+     * Normal HTTP/HTTPS URLs go through UV.
+     */
+    await registerUV();
+
+    const proxyURL = makeProxyURL(url);
+
+    page.src = proxyURL;
+
+    page.onload = () => {
+      hideLoading();
+      showStatus("Loaded");
+    };
+
+    page.onerror = () => {
+      hideLoading();
+
+      showProxyError(
+        "The proxied page could not be loaded."
+      );
+    };
+
+    try {
+      document.title =
+        "Web — " +
+        new URL(url).hostname;
+    } catch {
+      document.title = "Web";
+    }
+
+  } catch (e) {
+
+    hideLoading();
+
+    showProxyError(
+      e.message
+    );
+
+  }
+}
+
+/* =========================================================
+   UV REGISTRATION
+========================================================= */
+
+async function registerUV(){
+
+  if(uvReady)
+    return;
+
+
+  if(!("serviceWorker" in navigator)){
+
+    throw new Error(
+      "This browser does not support Service Workers."
+    );
+
+  }
+
+
+  /*
+   * UV requires HTTPS except localhost.
+   */
+
+  if(
+    location.protocol !== "https:" &&
+    location.hostname !== "localhost" &&
+    location.hostname !== "127.0.0.1"
+  ){
+
+    throw new Error(
+      "Ultraviolet requires HTTPS when hosted remotely."
+    );
+
+  }
+
+
+  /*
+   * Make sure the UV configuration exists.
+   */
+
+  if(
+    typeof self.__uv$config === "undefined"
+  ){
+
+    throw new Error(
+      "Ultraviolet configuration was not loaded."
+    );
+
+  }
+
+
+  /*
+   * Register the LOCAL UV service worker.
+   *
+   * This must be on the same origin.
+   */
+
+  try{
+
+    await navigator.serviceWorker.register(
+      "https://raw.githubusercontent.com/DarkSyr/ISFILES/refs/heads/main/uv.sw.js",
+      {
+        scope:
+          self.__uv$config.prefix
+      }
+    );
+
+  }catch(e){
+
+    throw new Error(
+      "Could not register the Ultraviolet service worker: " +
+      e.message
+    );
+
+  }
+
+
+  /*
+   * Wait for the worker.
+   */
+
+  try{
+
+    await navigator.serviceWorker.ready;
+
+  }catch(e){
+
+    throw new Error(
+      "Ultraviolet service worker failed to become ready: " +
+      e.message
+    );
+
+  }
+
+
+  uvReady = true;
+
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function addHistory(url){
+
+  if(
+    historyPosition >= 0 &&
+    historyList[historyPosition] === url
+  ){
+
+    return;
+
+  }
+
+
+  historyList =
+    historyList.slice(
+      0,
+      historyPosition + 1
+    );
+
+
+  historyList.push(url);
+
+
+  historyPosition =
+    historyList.length - 1;
+
+}
+
+
+/* =========================================================
+   PROXY URL
+========================================================= */
+
+function makeProxyURL(url){
+
+  if(
+    !self.__uv$config ||
+    typeof self.__uv$config.encodeUrl !== "function"
+  ){
+
+    throw new Error(
+      "UV encodeUrl function is unavailable."
+    );
+
+  }
+
+
+  const encoded =
+    self.__uv$config.encodeUrl(url);
+
+
+  return (
+    self.__uv$config.prefix +
+    encoded
+  );
+
+}
+
+
+/* =========================================================
+   LOAD URL
+========================================================= */
+
+async function loadURL(value,record=true){
+
+  const url =
+    normalizeURL(value);
+
+
+  if(!url)
+    return;
+
+
+  showLoading();
+
+  error.style.display =
+    "none";
+
+
+  try{
+
+    /*
+     * Register UV first.
+     */
+
+    await registerUV();
+
+
+    /*
+     * Add browser-style history.
+     */
+
+    if(record){
+
+      addHistory(url);
+
+    }
+
+
+    currentURL =
+      url;
+
+    address.value =
+      url;
+
+
+    /*
+     * Convert target URL into UV URL.
+     */
+
+    const proxyURL =
+      makeProxyURL(url);
+
+
+    /*
+     * Hide home screen.
+     */
+
+    home.style.display =
+      "none";
+
+
+    /*
+     * Navigate through UV.
+     *
+     * The service worker intercepts this URL
+     * and sends the request through Bare.
+     */
+
+    page.src =
+      proxyURL;
+
+
+    /*
+     * The proxied document lives inside the
+     * iframe. This keeps our browser controls
+     * visible.
+     */
+
+    page.onload = ()=>{
+
+      hideLoading();
+
+      showStatus("Loaded");
+
+    };
+
+
+    page.onerror = ()=>{
+
+      hideLoading();
+
+      showProxyError(
+        "The proxied page could not be loaded."
+      );
+
+    };
+
+
+    document.title =
+      "Web — " +
+      (()=>{
+
+        try{
+
+          return new URL(url).hostname;
+
+        }catch{
+
+          return "Proxy";
+
+        }
+
+      })();
+
+
+  }catch(e){
+
+    hideLoading();
+
+    showProxyError(
+      e.message
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+function showProxyError(message){
+
+  page.src =
+    "about:blank";
+
+  error.style.display =
+    "flex";
+
+  errortext.textContent =
+    message;
+
+}
+
+
+/* =========================================================
+   BACK
+========================================================= */
+
+document
+  .getElementById("back")
+  .onclick = ()=>{
+
+    if(historyPosition <= 0){
+
+      showStatus(
+        "No previous page"
+      );
+
+      return;
+
+    }
+
+
+    historyPosition--;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   FORWARD
+========================================================= */
+
+document
+  .getElementById("forward")
+  .onclick = ()=>{
+
+    if(
+      historyPosition >=
+      historyList.length - 1
+    ){
+
+      showStatus(
+        "No next page"
+      );
+
+      return;
+
+    }
+
+
+    historyPosition++;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   RELOAD
+========================================================= */
+
+document
+  .getElementById("reload")
+  .onclick = ()=>{
+
+    if(currentURL){
+
+      loadURL(
+        currentURL,
+        false
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   ADDRESS BAR
+========================================================= */
+
+document
+  .getElementById("go")
+  .onclick = ()=>{
+
+    loadURL(
+      address.value
+    );
+
+  };
+
+
+address.addEventListener(
+  "keydown",
+  event=>{
+
+    if(event.key === "Enter"){
+
+      loadURL(
+        address.value
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   HOME INPUT
+========================================================= */
+
+homeinput.addEventListener(
+  "keydown",
+  event=>{
+
+    if(event.key === "Enter"){
+
+      loadURL(
+        homeinput.value
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   RETRY
+========================================================= */
+
+document
+  .getElementById("retry")
+  .onclick = ()=>{
+
+    if(currentURL){
+
+      loadURL(
+        currentURL,
+        false
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+document
+  .getElementById("fullscreen")
+  .onclick = async()=>{
+
+    try{
+
+      if(!document.fullscreenElement){
+
+        await document.documentElement
+          .requestFullscreen();
+
+      }else{
+
+        await document.exitFullscreen();
+
+      }
+
+    }catch(e){
+
+      showStatus(
+        "Fullscreen unavailable"
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   CLOAK
+========================================================= */
+
+document
+  .getElementById("cloak")
+  .onclick = ()=>{
+
+    document.title =
+      "Google";
+
+
+    let icon =
+      document.querySelector(
+        "link[rel='icon']"
+      );
+
+
+    if(!icon){
+
+      icon =
+        document.createElement(
+          "link"
+        );
+
+      icon.rel =
+        "icon";
+
+      document.head.appendChild(
+        icon
+      );
+
+    }
+
+
+    icon.href =
+      "data:image/svg+xml," +
+      encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 64 64">
+          <circle
+            cx="32"
+            cy="32"
+            r="30"
+            fill="white"/>
+          <path
+            d="M32 10a22 22 0 1 0 22 22H32z"
+            fill="#4285f4"/>
+        </svg>`
+      );
+
+
+    showStatus(
+      "Cloaked"
+    );
+
+  };
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+document.addEventListener(
+  "keydown",
+  event=>{
+
+
+    if(
+      event.ctrlKey &&
+      event.key.toLowerCase() === "l"
+    ){
+
+      event.preventDefault();
+
+      address.focus();
+
+      address.select();
+
+    }
+
+
+    if(
+      event.altKey &&
+      event.key === "ArrowLeft"
+    ){
+
+      event.preventDefault();
+
+      document
+        .getElementById("back")
+        .click();
+
+    }
+
+
+    if(
+      event.altKey &&
+      event.key === "ArrowRight"
+    ){
+
+      event.preventDefault();
+
+      document
+        .getElementById("forward")
+        .click();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+(async function(){
+
+  try{
+
+    await registerUV();
+
+    showStatus(
+      "Ultraviolet ready"
+    );
+
+  }catch(e){
+
+    showProxyError(
+      e.message +
+      "\n\nMake sure the UV files are installed at /uv/ and the site is HTTPS."
+    );
+
+  }
+
+})();
+</script>
+
+</body>
+</html>
