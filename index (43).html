@@ -1054,22 +1054,17 @@ async function proxyFetch(url){
    ABSOLUTE URL
 ========================================================= */
 
-function absoluteURL(value,base){
+function absoluteURL(url, base){
 
-  try{
+  try {
+    const absolute =
+      new URL(url, base).href;
 
-    return new URL(
-      value,
-      base
-    ).href;
+    return absolute;
 
+  } catch {
+    return url;
   }
-  catch{
-
-    return value;
-
-  }
-
 }
 
 
@@ -1263,98 +1258,126 @@ function rewriteHTML(html,base){
    LOAD URL
 ========================================================= */
 
+const PROXY = "https://corsproxy.io/?url=";
+
 async function fetchTarget(url){
 
   showLoading();
+  error.style.display = "none";
+  page.innerHTML = "";
 
-  error.style.display =
-    "none";
+  try {
 
-  webpage.innerHTML =
-    "";
+    const proxyURL =
+      PROXY + encodeURIComponent(url);
 
-  try{
+    const response = await fetch(proxyURL, {
+      method: "GET",
+      credentials: "omit"
+    });
 
-    const response =
-      await proxyFetch(url);
+    if (!response.ok) {
+      throw new Error(
+        "Proxy returned HTTP " +
+        response.status
+      );
+    }
 
     const type =
-      response.headers.get(
-        "content-type"
-      ) || "";
+      response.headers.get("content-type") || "";
 
-    if(
+    if (
       type.includes("text/html") ||
       type.includes("application/xhtml")
-    ){
+    ) {
 
-      const html =
-        await response.text();
+      const html = await response.text();
 
-      const rewritten =
-        rewriteHTML(
-          html,
-          url
-        );
+      const finalURL =
+        response.url || url;
 
-      webpage.innerHTML =
-        rewritten;
+      page.innerHTML =
+        rewriteHTML(html, url);
+
+      currentURL = url;
+      address.value = url;
 
       attachNavigation();
 
-    }
+    } else if (type.includes("text/css")) {
 
-    else if(
-      type.includes("text/css")
-    ){
-
-      const css =
-        await response.text();
+      const css = await response.text();
 
       const style =
         document.createElement("style");
 
-      style.textContent =
-        css;
+      style.textContent = css;
 
-      webpage.appendChild(style);
+      page.appendChild(style);
 
-    }
+      currentURL = url;
+      address.value = url;
 
-    else if(
-      type.startsWith("text/")
-    ){
+    } else if (type.startsWith("text/")) {
 
-      const text =
-        await response.text();
+      const text = await response.text();
 
       const pre =
         document.createElement("pre");
 
-      pre.style.whiteSpace =
-        "pre-wrap";
+      pre.textContent = text;
+      pre.style.whiteSpace = "pre-wrap";
+      pre.style.padding = "20px";
 
-      pre.style.padding =
-        "20px";
+      page.appendChild(pre);
 
-      pre.textContent =
-        text;
+      currentURL = url;
+      address.value = url;
 
-      webpage.appendChild(pre);
+    } else {
 
+      const blob =
+        await response.blob();
+
+      const objectURL =
+        URL.createObjectURL(blob);
+
+      const iframe =
+        document.createElement("iframe");
+
+      iframe.src = objectURL;
+
+      iframe.style.width = "100%";
+      iframe.style.height = "100%";
+      iframe.style.border = "0";
+
+      page.appendChild(iframe);
+
+      currentURL = url;
+      address.value = url;
     }
 
-    else{
+    home.style.display = "none";
+    hideLoading();
 
-      throw new Error(
-        "Unsupported content type: " +
-        type
-      );
+    showStatus("Loaded through proxy");
 
-    }
+  } catch (err) {
 
+    hideLoading();
 
-    currentURL =
+    page.innerHTML = "";
+
+    error.style.display = "flex";
+
+    errortext.textContent =
+      "The proxy could not load this destination.\n\n" +
+      err.message;
+
+  }
+}
+  
+  currentURL =
       response.url || url;
 
     address.value =
@@ -1403,65 +1426,38 @@ async function fetchTarget(url){
 
 function attachNavigation(){
 
-  webpage
+  page
     .querySelectorAll("a[href]")
-    .forEach(link=>{
+    .forEach(link => {
 
-      link.addEventListener(
-        "click",
-        event=>{
+      link.addEventListener("click", event => {
 
-          const href =
-            link.getAttribute("href");
+        const href =
+          link.getAttribute("href");
 
-          if(!href)
-            return;
+        if (
+          !href ||
+          href.startsWith("#") ||
+          href.startsWith("javascript:")
+        ) {
+          return;
+        }
 
-          if(
-            href.startsWith("#") ||
-            href.startsWith("javascript:")
-          ){
-            return;
-          }
+        event.preventDefault();
 
-          event.preventDefault();
-
-          let target =
-            href;
-
-          /*
-            If the rewritten link already contains the
-            proxy prefix, recover its destination.
-          */
-
-          if(
-            target.startsWith(
-              PROXY_PREFIX
-            )
-          ){
-
-            try{
-
-              target =
-                decodeURIComponent(
-                  target.slice(
-                    PROXY_PREFIX.length
-                  )
-                );
-
-            }
-            catch{}
-
-          }
-
-          loadURL(
-            target
+        const target =
+          proxiedURL(
+            href,
+            currentURL
           );
 
-        }
-      );
+        loadURL(target);
+
+      });
 
     });
+
+}
 
 
   /*
