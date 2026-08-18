@@ -341,13 +341,15 @@ async function registerUV(){
    * same origin as this HTML file.
    */
 
-  const registration=
-    await navigator.serviceWorker.register(
-      "./uv.sw.js",
-      {
-        scope:"/service/"
-      }
-    );
+  const UV_BASE = new URL("./", location.href);
+
+const uvSW = new URL("uv.sw.js", UV_BASE).href;
+const uvScope = new URL("service/", UV_BASE).pathname;
+
+const registration =
+  await navigator.serviceWorker.register(uvSW, {
+    scope: uvScope
+  });
 
   await navigator.serviceWorker.ready;
 
