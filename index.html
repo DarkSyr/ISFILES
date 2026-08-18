@@ -248,8 +248,7 @@ button:hover{
 
 
 <!-- =====================================================
-     ULTRAVIOLET
-     ALL PATHS ARE RELATIVE TO /p/K0MN968P/
+     ULTRAVIOLET ONLY
 ====================================================== -->
 
 <script src="./uv.bundle.js"></script>
@@ -260,10 +259,6 @@ button:hover{
 <script>
 "use strict";
 
-
-/* =====================================================
-   ELEMENTS
-===================================================== */
 
 const page =
     document.getElementById("page");
@@ -290,15 +285,51 @@ const status =
     document.getElementById("status");
 
 
-/* =====================================================
-   STATE
-===================================================== */
-
 let currentURL = "";
 
 let historyList = [];
 
 let historyPosition = -1;
+
+
+/*
+===========================================================
+IMPORTANT
+
+This page is assumed to be:
+
+https://htmlhoster.com/p/K0MN968P/
+
+Therefore every UV resource is relative to that directory.
+
+NO:
+
+/scramjet/
+/scramjet/controller.js
+/scramjet/transport.js
+
+NO Scramjet code whatsoever.
+===========================================================
+*/
+
+
+const BASE =
+    new URL("./",location.href);
+
+const UV_SW =
+    new URL("./uv.sw.js",BASE);
+
+const UV_CONFIG =
+    new URL("./uv.config.js",BASE);
+
+const UV_BUNDLE =
+    new URL("./uv.bundle.js",BASE);
+
+const UV_HANDLER =
+    new URL("./uv.handler.js",BASE);
+
+const UV_SCOPE =
+    new URL("./service/",BASE);
 
 
 /* =====================================================
@@ -307,16 +338,14 @@ let historyPosition = -1;
 
 function showStatus(text){
 
-    status.textContent = text;
+    status.textContent=text;
 
-    status.style.display = "block";
+    status.style.display="block";
 
     clearTimeout(status.timer);
 
-    status.timer = setTimeout(() => {
-
-        status.style.display = "none";
-
+    status.timer=setTimeout(()=>{
+        status.style.display="none";
     },1800);
 }
 
@@ -327,40 +356,24 @@ function showStatus(text){
 
 function showLoading(){
 
-    loading.style.display = "flex";
+    loading.style.display="flex";
 
 }
 
 function hideLoading(){
 
-    loading.style.display = "none";
+    loading.style.display="none";
 
 }
 
 
 /* =====================================================
-   ERROR
-===================================================== */
-
-function showError(message){
-
-    hideLoading();
-
-    error.style.display = "flex";
-
-    errortext.textContent = message;
-
-}
-
-
-/* =====================================================
-   NORMALIZE URL
+   URL
 ===================================================== */
 
 function normalizeURL(value){
 
-    value =
-        String(value || "").trim();
+    value=String(value||"").trim();
 
     if(!value)
         return null;
@@ -381,13 +394,13 @@ function normalizeURL(value){
         value.includes(".")
     ){
 
-        return "https://" + value;
+        return "https://"+value;
 
     }
 
 
     return (
-        "https://www.google.com/search?q=" +
+        "https://www.google.com/search?q="+
         encodeURIComponent(value)
     );
 
@@ -401,8 +414,8 @@ function normalizeURL(value){
 function addHistory(url){
 
     if(
-        historyPosition >= 0 &&
-        historyList[historyPosition] === url
+        historyPosition>=0 &&
+        historyList[historyPosition]===url
     ){
 
         return;
@@ -413,84 +426,44 @@ function addHistory(url){
     historyList =
         historyList.slice(
             0,
-            historyPosition + 1
+            historyPosition+1
         );
 
 
     historyList.push(url);
 
-
     historyPosition =
-        historyList.length - 1;
+        historyList.length-1;
 
 }
 
 
 /* =====================================================
-   UV PATHS
-=====================================================
-
-   Because this page is:
-
-   /p/K0MN968P/index.html
-
-   these become:
-
-   /p/K0MN968P/uv.sw.js
-   /p/K0MN968P/uv.config.js
-   /p/K0MN968P/uv.bundle.js
-   /p/K0MN968P/uv.handler.js
-
+   UV SERVICE WORKER
 ===================================================== */
 
-const BASE =
-    new URL("./", location.href);
-
-
-const UV_SW =
-    new URL(
-        "./uv.sw.js",
-        BASE
-    );
-
-
-const UV_SCOPE =
-    new URL(
-        "./service/",
-        BASE
-    );
-
-
-/* =====================================================
-   REGISTER UV SERVICE WORKER
-===================================================== */
-
-async function registerUV(){
+async function startUV(){
 
     if(!("serviceWorker" in navigator)){
 
         throw new Error(
-            "Service Workers are not supported by this browser."
+            "This browser does not support Service Workers."
         );
 
     }
 
 
     showStatus(
-        "Starting Ultraviolet..."
+        "Registering UV..."
     );
 
 
     /*
-     * IMPORTANT:
+     * CRITICAL:
      *
-     * This is ./uv.sw.js
+     * ./uv.sw.js
      *
-     * NOT:
-     *
-     * /uv.sw.js
-     *
-     * Therefore HTML Hoster will request:
+     * resolves to:
      *
      * /p/K0MN968P/uv.sw.js
      */
@@ -499,42 +472,9 @@ async function registerUV(){
         await navigator.serviceWorker.register(
             UV_SW.href,
             {
-                scope: UV_SCOPE.pathname
+                scope:UV_SCOPE.pathname
             }
         );
-
-
-    /*
-     * Wait for activation.
-     */
-
-    if(
-        registration.installing
-    ){
-
-        await new Promise(
-            resolve => {
-
-                registration.installing.addEventListener(
-                    "statechange",
-                    function(){
-
-                        if(
-                            this.state ===
-                            "activated"
-                        ){
-
-                            resolve();
-
-                        }
-
-                    }
-                );
-
-            }
-        );
-
-    }
 
 
     await navigator.serviceWorker.ready;
@@ -546,41 +486,45 @@ async function registerUV(){
 
 
 /* =====================================================
-   CHECK UV CONFIG
+   UV CONFIG
 ===================================================== */
 
-function getUVConfig(){
+function getConfig(){
 
     /*
-     * uv.config.js should create:
+     * uv.config.js must define:
      *
      * self.__uv$config
      */
 
-    if(
-        !window.__uv$config
-    ){
+    const config =
+        window.__uv$config;
+
+
+    if(!config){
 
         throw new Error(
-            "uv.config.js did not create __uv$config."
+            "UV configuration was not loaded.\n\n"+
+            "Expected:\n"+
+            UV_CONFIG.href
         );
 
     }
 
 
-    return window.__uv$config;
+    return config;
 
 }
 
 
 /* =====================================================
-   CREATE PROXY URL
+   PROXY URL
 ===================================================== */
 
-function makeProxyURL(target){
+function createProxyURL(target){
 
     const config =
-        getUVConfig();
+        getConfig();
 
 
     if(
@@ -589,7 +533,16 @@ function makeProxyURL(target){
     ){
 
         throw new Error(
-            "UV encodeUrl function is missing."
+            "UV encodeUrl is missing."
+        );
+
+    }
+
+
+    if(!config.prefix){
+
+        throw new Error(
+            "UV prefix is missing."
         );
 
     }
@@ -602,28 +555,14 @@ function makeProxyURL(target){
 
 
     /*
-     * config.prefix should be:
-     *
-     * ./service/
-     *
-     * or
-     *
-     * /p/K0MN968P/service/
-     *
-     *
-     * We resolve it against the current
-     * page instead of assuming root.
+     * Resolve prefix relative to this page.
      */
 
-    const proxy =
-        new URL(
-            config.prefix +
-            encoded,
-            location.href
-        );
-
-
-    return proxy.href;
+    return new URL(
+        config.prefix +
+        encoded,
+        BASE
+    ).href;
 
 }
 
@@ -634,32 +573,21 @@ function makeProxyURL(target){
 
 async function loadThroughUV(url){
 
-    showStatus(
-        "Starting UV..."
+    await startUV();
+
+
+    const config =
+        getConfig();
+
+
+    console.log(
+        "UV config:",
+        config
     );
 
 
-    /*
-     * Register service worker.
-     */
-
-    await registerUV();
-
-
-    /*
-     * Get UV configuration.
-     */
-
-    const config =
-        getUVConfig();
-
-
-    /*
-     * Build proxied URL.
-     */
-
     const proxyURL =
-        makeProxyURL(
+        createProxyURL(
             url
         );
 
@@ -669,18 +597,19 @@ async function loadThroughUV(url){
         url
     );
 
+
     console.log(
-        "UV proxy:",
+        "UV URL:",
         proxyURL
     );
 
 
-    /*
-     * The service worker needs to control
-     * the iframe's navigation.
-     */
+    showStatus(
+        "Loading through UV..."
+    );
 
-    page.onload = () => {
+
+    page.onload=()=>{
 
         hideLoading();
 
@@ -691,21 +620,14 @@ async function loadThroughUV(url){
     };
 
 
-    page.onerror = () => {
+    page.onerror=()=>{
 
-        showError(
-            "Ultraviolet could not load the destination."
+        throw new Error(
+            "The UV proxy page failed to load."
         );
 
     };
 
-
-    /*
-     * IMPORTANT:
-     *
-     * The iframe must be inside the UV service
-     * worker's scope.
-     */
 
     page.src =
         proxyURL;
@@ -714,18 +636,16 @@ async function loadThroughUV(url){
 
 
 /* =====================================================
-   LOAD URL
+   LOAD
 ===================================================== */
 
 async function loadURL(
     value,
-    record = true
+    record=true
 ){
 
     const url =
-        normalizeURL(
-            value
-        );
+        normalizeURL(value);
 
 
     if(!url)
@@ -740,9 +660,7 @@ async function loadURL(
 
     if(record){
 
-        addHistory(
-            url
-        );
+        addHistory(url);
 
     }
 
@@ -762,7 +680,7 @@ async function loadURL(
     try{
 
         document.title =
-            "Web — " +
+            "Web — "+
             new URL(url).hostname;
 
     }catch{
@@ -782,47 +700,45 @@ async function loadURL(
     }catch(e){
 
         console.error(
-            "UV ERROR:",
             e
         );
 
 
         showError(
-            "Ultraviolet could not be started.\n\n" +
-            e.message +
-            "\n\n" +
-
-            "Required files at this page's location:\n" +
-
-            new URL(
-                "./uv.bundle.js",
-                BASE
-            ).href +
-            "\n" +
-
-            new URL(
-                "./uv.config.js",
-                BASE
-            ).href +
-            "\n" +
-
-            new URL(
-                "./uv.handler.js",
-                BASE
-            ).href +
-            "\n" +
-
-            new URL(
-                "./uv.sw.js",
-                BASE
-            ).href +
-            "\n\n" +
-
-            "Service-worker scope:\n" +
+            "Ultraviolet failed.\n\n"+
+            e.message+
+            "\n\n"+
+            "UV files expected at:\n"+
+            UV_BUNDLE.href+
+            "\n"+
+            UV_CONFIG.href+
+            "\n"+
+            UV_HANDLER.href+
+            "\n"+
+            UV_SW.href+
+            "\n\n"+
+            "Service-worker scope:\n"+
             UV_SCOPE.pathname
         );
 
     }
+
+}
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+function showError(message){
+
+    hideLoading();
+
+    error.style.display =
+        "flex";
+
+    errortext.textContent =
+        message;
 
 }
 
@@ -833,9 +749,9 @@ async function loadURL(
 
 document
 .getElementById("back")
-.onclick = () => {
+.onclick=()=>{
 
-    if(historyPosition <= 0){
+    if(historyPosition<=0){
 
         showStatus(
             "No previous page"
@@ -865,11 +781,11 @@ document
 
 document
 .getElementById("forward")
-.onclick = () => {
+.onclick=()=>{
 
     if(
-        historyPosition >=
-        historyList.length - 1
+        historyPosition>=
+        historyList.length-1
     ){
 
         showStatus(
@@ -900,7 +816,7 @@ document
 
 document
 .getElementById("reload")
-.onclick = () => {
+.onclick=()=>{
 
     if(!currentURL){
 
@@ -927,7 +843,7 @@ document
 
 document
 .getElementById("go")
-.onclick = () => {
+.onclick=()=>{
 
     loadURL(
         address.value
@@ -938,9 +854,9 @@ document
 
 address.addEventListener(
     "keydown",
-    e => {
+    e=>{
 
-        if(e.key === "Enter"){
+        if(e.key==="Enter"){
 
             loadURL(
                 address.value
@@ -958,9 +874,9 @@ address.addEventListener(
 
 homeinput.addEventListener(
     "keydown",
-    e => {
+    e=>{
 
-        if(e.key === "Enter"){
+        if(e.key==="Enter"){
 
             loadURL(
                 homeinput.value
@@ -978,7 +894,7 @@ homeinput.addEventListener(
 
 document
 .getElementById("retry")
-.onclick = () => {
+.onclick=()=>{
 
     if(currentURL){
 
@@ -998,7 +914,7 @@ document
 
 document
 .getElementById("fullscreen")
-.onclick = async () => {
+.onclick=async()=>{
 
     try{
 
@@ -1034,10 +950,9 @@ document
 
 document
 .getElementById("cloak")
-.onclick = () => {
+.onclick=()=>{
 
-    document.title =
-        "Google";
+    document.title="Google";
 
 
     let icon =
@@ -1053,8 +968,7 @@ document
                 "link"
             );
 
-        icon.rel =
-            "icon";
+        icon.rel="icon";
 
         document.head.appendChild(
             icon
@@ -1064,7 +978,7 @@ document
 
 
     icon.href =
-        "data:image/svg+xml," +
+        "data:image/svg+xml,"+
         encodeURIComponent(`
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1097,11 +1011,11 @@ document
 
 document.addEventListener(
     "keydown",
-    e => {
+    e=>{
 
         if(
             e.ctrlKey &&
-            e.key.toLowerCase() === "l"
+            e.key.toLowerCase()==="l"
         ){
 
             e.preventDefault();
@@ -1115,7 +1029,7 @@ document.addEventListener(
 
         if(
             e.altKey &&
-            e.key === "ArrowLeft"
+            e.key==="ArrowLeft"
         ){
 
             e.preventDefault();
@@ -1129,7 +1043,7 @@ document.addEventListener(
 
         if(
             e.altKey &&
-            e.key === "ArrowRight"
+            e.key==="ArrowRight"
         ){
 
             e.preventDefault();
@@ -1145,8 +1059,23 @@ document.addEventListener(
 
 
 /* =====================================================
-   STARTUP
+   DEBUG
 ===================================================== */
+
+console.log(
+    "UV bundle:",
+    UV_BUNDLE.href
+);
+
+console.log(
+    "UV config:",
+    UV_CONFIG.href
+);
+
+console.log(
+    "UV handler:",
+    UV_HANDLER.href
+);
 
 console.log(
     "UV service worker:",
