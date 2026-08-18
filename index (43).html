@@ -401,93 +401,6 @@ function normalizeURL(value){
 }
 
 
-async function loadURL(value, record = true){
-
-  const url = normalizeURL(value);
-
-  if (!url) return;
-
-  showLoading();
-  error.style.display = "none";
-
-  try {
-
-    if (record) {
-      addHistory(url);
-    }
-
-    currentURL = url;
-    address.value = url;
-    home.style.display = "none";
-
-    /*
-     * BLOB / DATA URLs cannot be encoded by UV.
-     * Load them directly instead.
-     */
-    if (
-      url.startsWith("blob:") ||
-      url.startsWith("data:")
-    ) {
-
-      page.src = url;
-
-      page.onload = () => {
-        hideLoading();
-        showStatus("Loaded");
-      };
-
-      page.onerror = () => {
-        hideLoading();
-        showProxyError(
-          "The blob/data URL could not be loaded."
-        );
-      };
-
-      return;
-    }
-
-
-    /*
-     * Normal HTTP/HTTPS URLs go through UV.
-     */
-    await registerUV();
-
-    const proxyURL = makeProxyURL(url);
-
-    page.src = proxyURL;
-
-    page.onload = () => {
-      hideLoading();
-      showStatus("Loaded");
-    };
-
-    page.onerror = () => {
-      hideLoading();
-
-      showProxyError(
-        "The proxied page could not be loaded."
-      );
-    };
-
-    try {
-      document.title =
-        "Web — " +
-        new URL(url).hostname;
-    } catch {
-      document.title = "Web";
-    }
-
-  } catch (e) {
-
-    hideLoading();
-
-    showProxyError(
-      e.message
-    );
-
-  }
-}
-
 /* =========================================================
    UV REGISTRATION
 ========================================================= */
@@ -654,131 +567,100 @@ function makeProxyURL(url){
    LOAD URL
 ========================================================= */
 
-async function loadURL(value,record=true){
+async function loadURL(value, record = true) {
+  const url = normalizeURL(value);
 
-  const url =
-    normalizeURL(value);
-
-
-  if(!url)
-    return;
-
+  if (!url) return;
 
   showLoading();
+  error.style.display = "none";
 
-  error.style.display =
-    "none";
-
-
-  try{
-
-    /*
-     * Register UV first.
-     */
-
-    await registerUV();
-
-
-    /*
-     * Add browser-style history.
-     */
-
-    if(record){
-
+  try {
+    if (record) {
       addHistory(url);
-
     }
 
-
-    currentURL =
-      url;
-
-    address.value =
-      url;
-
+    currentURL = url;
+    address.value = url;
+    home.style.display = "none";
 
     /*
-     * Convert target URL into UV URL.
-     */
-
-    const proxyURL =
-      makeProxyURL(url);
-
-
-    /*
-     * Hide home screen.
-     */
-
-    home.style.display =
-      "none";
-
-
-    /*
-     * Navigate through UV.
+     * BLOB URLs
      *
-     * The service worker intercepts this URL
-     * and sends the request through Bare.
+     * These cannot be sent through UV because blob:
+     * URLs belong to the origin that created them.
      */
+    if (url.startsWith("blob:")) {
+      page.src = url;
 
-    page.src =
-      proxyURL;
+      page.onload = () => {
+        hideLoading();
+        showStatus("Blob loaded");
+      };
 
+      page.onerror = () => {
+        hideLoading();
+        showProxyError(
+          "The blob URL could not be loaded. " +
+          "Blob URLs can normally only be opened by the origin that created them."
+        );
+      };
+
+      return;
+    }
 
     /*
-     * The proxied document lives inside the
-     * iframe. This keeps our browser controls
-     * visible.
+     * DATA URLs
      */
+    if (url.startsWith("data:")) {
+      page.src = url;
 
-    page.onload = ()=>{
+      page.onload = () => {
+        hideLoading();
+        showStatus("Loaded");
+      };
 
+      page.onerror = () => {
+        hideLoading();
+        showProxyError("The data URL could not be loaded.");
+      };
+
+      return;
+    }
+
+    /*
+     * HTTP/HTTPS → Ultraviolet
+     */
+    await registerUV();
+
+    const proxyURL = makeProxyURL(url);
+
+    page.onload = () => {
       hideLoading();
-
       showStatus("Loaded");
-
     };
 
-
-    page.onerror = ()=>{
-
+    page.onerror = () => {
       hideLoading();
-
       showProxyError(
         "The proxied page could not be loaded."
       );
-
     };
 
+    page.src = proxyURL;
 
-    document.title =
-      "Web — " +
-      (()=>{
+    try {
+      document.title =
+        "Web — " + new URL(url).hostname;
+    } catch {
+      document.title = "Web";
+    }
 
-        try{
-
-          return new URL(url).hostname;
-
-        }catch{
-
-          return "Proxy";
-
-        }
-
-      })();
-
-
-  }catch(e){
-
+  } catch (e) {
     hideLoading();
-
-    showProxyError(
-      e.message
-    );
-
+    showProxyError(e.message);
   }
-
 }
-
 
 /* =========================================================
    ERROR
