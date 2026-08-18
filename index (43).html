@@ -200,6 +200,7 @@ button:hover{
 
 <iframe
  id="page"
+ sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts allow-downloads"
  allow="fullscreen; autoplay; clipboard-read; clipboard-write"
  referrerpolicy="no-referrer">
 </iframe>
@@ -242,336 +243,999 @@ button:hover{
 
 <div id="status"></div>
 
+
+<!--
+===========================================================
+BARE CLIENT
+===========================================================
+-->
+
+<script src="https://unpkg.com/@mercuryworkshop/bare-transport@2/dist/index.js"></script>
+
 <script>
 "use strict";
 
-const page=document.getElementById("page");
-const address=document.getElementById("address");
-const home=document.getElementById("home");
-const homeinput=document.getElementById("homeinput");
-const loading=document.getElementById("loading");
-const error=document.getElementById("error");
-const errortext=document.getElementById("errortext");
-const status=document.getElementById("status");
 
-let currentURL="";
-let historyList=[];
-let historyPosition=-1;
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const page =
+  document.getElementById("page");
+
+const address =
+  document.getElementById("address");
+
+const home =
+  document.getElementById("home");
+
+const homeinput =
+  document.getElementById("homeinput");
+
+const loading =
+  document.getElementById("loading");
+
+const error =
+  document.getElementById("error");
+
+const errortext =
+  document.getElementById("errortext");
+
+const status =
+  document.getElementById("status");
+
+
+/* =========================================================
+   PUBLIC BARE SERVER
+========================================================= */
+
+const BARE_SERVER =
+  "https://openbare.xyz/bare/";
+
+
+/* =========================================================
+   BARE CLIENT
+========================================================= */
+
+let bareClient = null;
+
+try{
+
+  if(
+    typeof BareMod === "undefined" ||
+    typeof BareMod.BareClient !== "function"
+  ){
+
+    throw new Error(
+      "Bare Transport failed to load."
+    );
+
+  }
+
+  bareClient =
+    new BareMod.BareClient(
+      BARE_SERVER
+    );
+
+}catch(e){
+
+  console.error(e);
+
+}
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentURL = "";
+
+let historyList = [];
+
+let historyPosition = -1;
+
+let currentBlob = null;
+
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 function showStatus(text){
 
-  status.textContent=text;
-  status.style.display="block";
+  status.textContent =
+    text;
 
-  clearTimeout(status.timer);
+  status.style.display =
+    "block";
 
-  status.timer=setTimeout(()=>{
-    status.style.display="none";
-  },1800);
+  clearTimeout(
+    status.timer
+  );
+
+  status.timer =
+    setTimeout(()=>{
+      status.style.display =
+        "none";
+    },1800);
+
 }
 
+
+/* =========================================================
+   LOADING
+========================================================= */
+
 function showLoading(){
-  loading.style.display="flex";
+
+  loading.style.display =
+    "flex";
+
 }
 
 function hideLoading(){
-  loading.style.display="none";
+
+  loading.style.display =
+    "none";
+
 }
+
+
+/* =========================================================
+   URL NORMALIZATION
+========================================================= */
 
 function normalizeURL(value){
 
-  value=String(value||"").trim();
+  value =
+    String(value || "").trim();
 
-  if(!value) return null;
+  if(!value)
+    return null;
+
 
   if(
     value.startsWith("blob:") ||
     value.startsWith("data:")
   ){
+
     return value;
+
   }
+
 
   if(
     value.startsWith("http://") ||
     value.startsWith("https://")
   ){
+
     return value;
+
   }
+
 
   if(
     !value.includes(" ") &&
     value.includes(".")
   ){
-    return "https://"+value;
+
+    return "https://" +
+      value;
+
   }
 
-  return "https://www.google.com/search?q="+
-    encodeURIComponent(value);
+
+  return (
+    "https://www.google.com/search?q=" +
+    encodeURIComponent(value)
+  );
+
 }
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
 
 function addHistory(url){
 
   if(
-    historyPosition>=0 &&
-    historyList[historyPosition]===url
+    historyPosition >= 0 &&
+    historyList[
+      historyPosition
+    ] === url
   ){
+
     return;
+
   }
 
-  historyList=historyList.slice(
-    0,
-    historyPosition+1
-  );
+
+  historyList =
+    historyList.slice(
+      0,
+      historyPosition + 1
+    );
+
 
   historyList.push(url);
 
-  historyPosition=historyList.length-1;
+
+  historyPosition =
+    historyList.length - 1;
+
 }
+
+
+/* =========================================================
+   ERROR
+========================================================= */
 
 function showError(message){
 
   hideLoading();
 
-  page.src="about:blank";
+  page.src =
+    "about:blank";
 
-  error.style.display="flex";
+  error.style.display =
+    "flex";
 
-  errortext.textContent=message;
+  errortext.textContent =
+    message;
+
 }
 
-function loadURL(value,record=true){
 
-  const url=normalizeURL(value);
+/* =========================================================
+   CLEAN OLD BLOB
+========================================================= */
 
-  if(!url) return;
+function cleanupBlob(){
 
-  showLoading();
+  if(currentBlob){
 
-  error.style.display="none";
+    URL.revokeObjectURL(
+      currentBlob
+    );
 
-  if(record){
-    addHistory(url);
+    currentBlob =
+      null;
+
   }
 
-  currentURL=url;
+}
 
-  address.value=url;
 
-  home.style.display="none";
+/* =========================================================
+   REWRITE URLS
+========================================================= */
+
+function rewriteDocument(
+  html,
+  baseURL
+){
 
   /*
-   * Blob/data URLs can be opened directly.
+   * Parse the returned document.
    */
-  if(
-    url.startsWith("blob:") ||
-    url.startsWith("data:")
-  ){
 
-    page.src=url;
+  const parser =
+    new DOMParser();
 
-    page.onload=()=>{
+  const doc =
+    parser.parseFromString(
+      html,
+      "text/html"
+    );
+
+
+  /*
+   * Make relative links absolute.
+   */
+
+  const base =
+    doc.createElement(
+      "base"
+    );
+
+  base.href =
+    baseURL;
+
+  if(doc.head){
+
+    doc.head.prepend(
+      base
+    );
+
+  }
+
+
+  /*
+   * Remove CSP meta tags that would
+   * interfere with the generated document.
+   */
+
+  doc
+    .querySelectorAll(
+      'meta[http-equiv="Content-Security-Policy"]'
+    )
+    .forEach(
+      el=>el.remove()
+    );
+
+
+  /*
+   * Remove X-Frame-Options if it
+   * appears as a meta tag.
+   */
+
+  doc
+    .querySelectorAll(
+      'meta[http-equiv="X-Frame-Options"]'
+    )
+    .forEach(
+      el=>el.remove()
+    );
+
+
+  /*
+   * Return serialized document.
+   */
+
+  return (
+    "<!DOCTYPE html>\n" +
+    doc.documentElement.outerHTML
+  );
+
+}
+
+
+/* =========================================================
+   BARE FETCH
+========================================================= */
+
+async function bareFetch(
+  target
+){
+
+  if(!bareClient){
+
+    throw new Error(
+      "Bare Client is unavailable."
+    );
+
+  }
+
+
+  showStatus(
+    "Connecting to Bare..."
+  );
+
+
+  const response =
+    await bareClient.fetch(
+      target
+    );
+
+
+  return response;
+
+}
+
+
+/* =========================================================
+   LOAD BLOB / DATA
+========================================================= */
+
+async function loadDirectURL(
+  url
+){
+
+  cleanupBlob();
+
+
+  page.onload =
+    ()=>{
       hideLoading();
       showStatus("Loaded");
     };
 
-    page.onerror=()=>{
+
+  page.onerror =
+    ()=>{
       showError(
         "The Blob/Data URL could not be loaded."
       );
     };
 
-    return;
-  }
 
-  /*
-   * Normal websites are opened directly.
-   *
-   * This is NOT a proxy.
-   */
-  page.onload=()=>{
-    hideLoading();
-    showStatus("Loaded");
-  };
+  page.src =
+    url;
 
-  page.onerror=()=>{
-    showError(
-      "The destination could not be displayed in the iframe.\n\n"+
-      "The website may block iframe embedding with "+
-      "X-Frame-Options or Content-Security-Policy."
-    );
-  };
-
-  try{
-    document.title=
-      "Web — "+new URL(url).hostname;
-  }catch{
-    document.title="Web";
-  }
-
-  page.src=url;
-
-  /*
-   * Don't leave the loading overlay indefinitely
-   * on sites that block iframe embedding.
-   */
-  setTimeout(()=>{
-    if(
-      loading.style.display!=="none" &&
-      currentURL===url
-    ){
-      hideLoading();
-    }
-  },8000);
 }
 
-/* Back */
 
-document.getElementById("back").onclick=()=>{
+/* =========================================================
+   LOAD THROUGH BARE
+========================================================= */
 
-  if(historyPosition<=0){
-    showStatus("No previous page");
-    return;
+async function loadThroughBare(
+  url
+){
+
+  if(!bareClient){
+
+    throw new Error(
+      "The Bare client could not be initialized."
+    );
+
   }
 
-  historyPosition--;
 
-  loadURL(
-    historyList[historyPosition],
-    false
+  showStatus(
+    "Fetching through Bare..."
   );
-};
 
-/* Forward */
 
-document.getElementById("forward").onclick=()=>{
+  const response =
+    await bareFetch(
+      url
+    );
+
+
+  if(!response){
+
+    throw new Error(
+      "Bare returned no response."
+    );
+
+  }
+
 
   if(
-    historyPosition>=historyList.length-1
+    !response.ok
   ){
-    showStatus("No next page");
-    return;
+
+    throw new Error(
+      "Bare returned HTTP " +
+      response.status
+    );
+
   }
 
-  historyPosition++;
 
-  loadURL(
-    historyList[historyPosition],
-    false
-  );
-};
+  const contentType =
+    response.headers.get(
+      "content-type"
+    ) || "";
 
-/* Reload */
 
-document.getElementById("reload").onclick=()=>{
+  /*
+   * HTML
+   */
 
-  if(!currentURL){
-    showStatus("Nothing to reload");
+  if(
+    contentType.includes(
+      "text/html"
+    ) ||
+    contentType.includes(
+      "application/xhtml+xml"
+    )
+  ){
+
+    const text =
+      await response.text();
+
+
+    const rewritten =
+      rewriteDocument(
+        text,
+        url
+      );
+
+
+    const blob =
+      new Blob(
+        [rewritten],
+        {
+          type:
+            "text/html;charset=utf-8"
+        }
+      );
+
+
+    cleanupBlob();
+
+
+    currentBlob =
+      URL.createObjectURL(
+        blob
+      );
+
+
+    page.onload =
+      ()=>{
+        hideLoading();
+        showStatus("Loaded");
+      };
+
+
+    page.onerror =
+      ()=>{
+        showError(
+          "The returned HTML could not be displayed."
+        );
+      };
+
+
+    page.src =
+      currentBlob;
+
+
     return;
+
   }
+
+
+  /*
+   * Other resources.
+   */
+
+  const buffer =
+    await response.arrayBuffer();
+
+
+  const blob =
+    new Blob(
+      [buffer],
+      {
+        type:
+          contentType ||
+          "application/octet-stream"
+      }
+    );
+
+
+  cleanupBlob();
+
+
+  currentBlob =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  page.onload =
+    ()=>{
+      hideLoading();
+      showStatus("Loaded");
+    };
+
+
+  page.onerror =
+    ()=>{
+      showError(
+        "The returned resource could not be displayed."
+      );
+    };
+
+
+  page.src =
+    currentBlob;
+
+}
+
+
+/* =========================================================
+   LOAD URL
+========================================================= */
+
+async function loadURL(
+  value,
+  record=true
+){
+
+  const url =
+    normalizeURL(
+      value
+    );
+
+
+  if(!url)
+    return;
+
 
   showLoading();
 
-  page.src=currentURL;
-};
+  error.style.display =
+    "none";
 
-/* Go */
 
-document.getElementById("go").onclick=()=>{
-  loadURL(address.value);
-};
+  if(record){
+
+    addHistory(
+      url
+    );
+
+  }
+
+
+  currentURL =
+    url;
+
+  address.value =
+    url;
+
+  home.style.display =
+    "none";
+
+
+  try{
+
+    /*
+     * Direct Blob/Data.
+     */
+
+    if(
+      url.startsWith(
+        "blob:"
+      ) ||
+      url.startsWith(
+        "data:"
+      )
+    ){
+
+      await loadDirectURL(
+        url
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * HTTP/HTTPS through Bare.
+     */
+
+    try{
+
+      document.title =
+        "Web — " +
+        new URL(
+          url
+        ).hostname;
+
+    }catch{
+
+      document.title =
+        "Web";
+
+    }
+
+
+    await loadThroughBare(
+      url
+    );
+
+
+  }catch(e){
+
+    console.error(
+      "Bare error:",
+      e
+    );
+
+
+    showError(
+      "The destination could not be loaded through Bare.\n\n" +
+      e.message +
+      "\n\n" +
+      "The public Bare endpoint may be unavailable, " +
+      "rate-limited, or the destination may require " +
+      "features that this simple frontend does not rewrite."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   BACK
+========================================================= */
+
+document
+  .getElementById(
+    "back"
+  )
+  .onclick =
+  ()=>{
+
+    if(
+      historyPosition <= 0
+    ){
+
+      showStatus(
+        "No previous page"
+      );
+
+      return;
+
+    }
+
+
+    historyPosition--;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   FORWARD
+========================================================= */
+
+document
+  .getElementById(
+    "forward"
+  )
+  .onclick =
+  ()=>{
+
+    if(
+      historyPosition >=
+      historyList.length - 1
+    ){
+
+      showStatus(
+        "No next page"
+      );
+
+      return;
+
+    }
+
+
+    historyPosition++;
+
+
+    loadURL(
+      historyList[
+        historyPosition
+      ],
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   RELOAD
+========================================================= */
+
+document
+  .getElementById(
+    "reload"
+  )
+  .onclick =
+  ()=>{
+
+    if(!currentURL){
+
+      showStatus(
+        "Nothing to reload"
+      );
+
+      return;
+
+    }
+
+
+    loadURL(
+      currentURL,
+      false
+    );
+
+  };
+
+
+/* =========================================================
+   GO
+========================================================= */
+
+document
+  .getElementById(
+    "go"
+  )
+  .onclick =
+  ()=>{
+
+    loadURL(
+      address.value
+    );
+
+  };
+
 
 address.addEventListener(
   "keydown",
   e=>{
-    if(e.key==="Enter"){
-      loadURL(address.value);
+
+    if(
+      e.key === "Enter"
+    ){
+
+      loadURL(
+        address.value
+      );
+
     }
+
   }
 );
 
-/* Home */
+
+/* =========================================================
+   HOME
+========================================================= */
 
 homeinput.addEventListener(
   "keydown",
   e=>{
-    if(e.key==="Enter"){
-      loadURL(homeinput.value);
+
+    if(
+      e.key === "Enter"
+    ){
+
+      loadURL(
+        homeinput.value
+      );
+
     }
+
   }
 );
 
-/* Retry */
 
-document.getElementById("retry").onclick=()=>{
+/* =========================================================
+   RETRY
+========================================================= */
 
-  if(currentURL){
-    loadURL(currentURL,false);
-  }
-};
+document
+  .getElementById(
+    "retry"
+  )
+  .onclick =
+  ()=>{
 
-/* Fullscreen */
+    if(currentURL){
 
-document.getElementById("fullscreen").onclick=async()=>{
-
-  try{
-
-    if(!document.fullscreenElement){
-
-      await document.documentElement
-        .requestFullscreen();
-
-    }else{
-
-      await document.exitFullscreen();
+      loadURL(
+        currentURL,
+        false
+      );
 
     }
 
-  }catch{
+  };
 
-    showStatus("Fullscreen unavailable");
 
-  }
-};
+/* =========================================================
+   FULLSCREEN
+========================================================= */
 
-/* Cloak */
+document
+  .getElementById(
+    "fullscreen"
+  )
+  .onclick =
+  async()=>{
 
-document.getElementById("cloak").onclick=()=>{
+    try{
 
-  document.title="Google";
+      if(
+        !document.fullscreenElement
+      ){
 
-  let icon=document.querySelector(
-    "link[rel='icon']"
-  );
+        await document
+          .documentElement
+          .requestFullscreen();
 
-  if(!icon){
+      }else{
 
-    icon=document.createElement("link");
+        await document
+          .exitFullscreen();
 
-    icon.rel="icon";
+      }
 
-    document.head.appendChild(icon);
-  }
+    }catch{
 
-  icon.href=
-    "data:image/svg+xml,"+
-    encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg"
-           viewBox="0 0 64 64">
-        <circle
-          cx="32"
-          cy="32"
-          r="30"
-          fill="white"/>
-        <path
-          d="M32 10a22 22 0 1 0 22 22H32z"
-          fill="#4285f4"/>
-      </svg>
-    `);
+      showStatus(
+        "Fullscreen unavailable"
+      );
 
-  showStatus("Cloaked");
-};
+    }
 
-/* Keyboard */
+  };
+
+
+/* =========================================================
+   CLOAK
+========================================================= */
+
+document
+  .getElementById(
+    "cloak"
+  )
+  .onclick =
+  ()=>{
+
+    document.title =
+      "Google";
+
+
+    let icon =
+      document.querySelector(
+        "link[rel='icon']"
+      );
+
+
+    if(!icon){
+
+      icon =
+        document.createElement(
+          "link"
+        );
+
+      icon.rel =
+        "icon";
+
+      document.head.appendChild(
+        icon
+      );
+
+    }
+
+
+    icon.href =
+      "data:image/svg+xml," +
+      encodeURIComponent(`
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 64 64">
+
+          <circle
+            cx="32"
+            cy="32"
+            r="30"
+            fill="white"/>
+
+          <path
+            d="M32 10a22 22 0 1 0 22 22H32z"
+            fill="#4285f4"/>
+
+        </svg>
+      `);
+
+
+    showStatus(
+      "Cloaked"
+    );
+
+  };
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
 
 document.addEventListener(
   "keydown",
@@ -579,42 +1243,72 @@ document.addEventListener(
 
     if(
       e.ctrlKey &&
-      e.key.toLowerCase()==="l"
+      e.key.toLowerCase() === "l"
     ){
 
       e.preventDefault();
 
       address.focus();
+
       address.select();
+
     }
+
 
     if(
       e.altKey &&
-      e.key==="ArrowLeft"
+      e.key === "ArrowLeft"
     ){
 
       e.preventDefault();
 
       document
-        .getElementById("back")
+        .getElementById(
+          "back"
+        )
         .click();
+
     }
+
 
     if(
       e.altKey &&
-      e.key==="ArrowRight"
+      e.key === "ArrowRight"
     ){
 
       e.preventDefault();
 
       document
-        .getElementById("forward")
+        .getElementById(
+          "forward"
+        )
         .click();
+
     }
+
   }
 );
 
-showStatus("Ready");
+
+/* =========================================================
+   STARTUP
+========================================================= */
+
+if(bareClient){
+
+  showStatus(
+    "Bare ready"
+  );
+
+}else{
+
+  showError(
+    "The Bare client could not be loaded.\n\n" +
+    "Check that the CDN is accessible."
+  );
+
+}
+
 </script>
 
 </body>
