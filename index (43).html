@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Interstellar</title>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --card: #1a1a22;
+      --text: #f2f2f5;
+      --muted: #9a9aad;
+      --accent: #6c8cff;
+      --border: #2a2a36;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100%;
+      background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .wrap {
+      max-width: 640px; margin: 0 auto; padding: 48px 20px 80px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+    }
+    h1 {
+      font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em;
+      margin: 0; background: linear-gradient(135deg, #fff, #6c8cff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .sub { color: var(--muted); font-size: 0.95rem; margin: 0; text-align: center; }
+    form {
+      width: 100%; display: flex; gap: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 8px;
+    }
+    input[type="text"] {
+      flex: 1; border: 0; outline: 0; background: transparent;
+      color: var(--text); font-size: 1rem; padding: 12px 14px;
+    }
+    button, .btn {
+      border: 0; border-radius: 10px; padding: 12px 18px;
+      background: var(--accent); color: #fff; font-weight: 600;
+      cursor: pointer; font-size: 0.95rem;
+    }
+    button:hover, .btn:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status {
+      font-size: 0.85rem; color: var(--muted); min-height: 1.2em;
+      text-align: center;
+    }
+    .status.ok { color: #5ddea6; }
+    .status.err { color: #ff6b7a; }
+    .card {
+      width: 100%; background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px 18px;
+    }
+    .card h2 { margin: 0 0 10px; font-size: 0.95rem; color: var(--muted); font-weight: 600; }
+    .card label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+    .card input {
+      width: 100%; padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: #121218; color: var(--text);
+      font-size: 0.9rem;
+    }
+    .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .hint { font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin: 8px 0 0; }
+    code { background: #121218; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+    iframe#proxy-frame {
+      display: none; width: 100%; height: 70vh; border: 1px solid var(--border);
+      border-radius: 12px; background: #000;
+    }
+    iframe#proxy-frame.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Interstellar</h1>
+    <p class="sub">Static Ultraviolet proxy · needs HTTPS host + a Bare server</p>
+
+    <form id="go" autocomplete="off">
+      <input id="url" type="text" placeholder="Search Google or enter a URL" autofocus />
+      <button type="submit" id="go-btn">Go</button>
+    </form>
+    <div class="status" id="status">Registering service worker…</div>
+
+    <iframe id="proxy-frame" title="Proxied page"></iframe>
+
+    <div class="card">
+      <h2>Bare server</h2>
+      <label for="bare">Bare URL (must support the Bare protocol)</label>
+      <input id="bare" type="text" placeholder="https://example.com/bare/" />
+      <div class="row">
+        <button type="button" class="btn" id="save-bare">Save &amp; reload SW</button>
+      </div>
+      <p class="hint">
+        Default is <code>https://incog.dev/bare/</code>. If proxying fails, set a working Bare endpoint
+        and click Save. This static build does <strong>not</strong> include a Bare server — only the UV client.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>How to host (one public link)</h2>
+      <p class="hint">
+        Upload this whole folder to any static host (GitHub Pages, Netlify, Cloudflare Pages, nginx, etc.)
+        so these files are reachable on the same origin:
+      </p>
+      <p class="hint">
+        <code>index.html</code> · <code>sw.js</code> · <code>uv.bundle.js</code> ·
+        <code>uv.config.js</code> · <code>uv.handler.js</code> · <code>uv.sw.js</code>
+      </p>
+      <p class="hint">
+        Open the site over <strong>https://</strong> (or localhost). Service workers will not register from
+        <code>data:</code>, <code>blob:</code>, or <code>file://</code>.
+      </p>
+    </div>
+  </div>
+
+  <script src="/uv.bundle.js"></script>
+  <script src="/uv.config.js"></script>
+  <script>
+(function () {
+  const statusEl = document.getElementById("status");
+  const frame = document.getElementById("proxy-frame");
+  const bareInput = document.getElementById("bare");
+  const form = document.getElementById("go");
+  const urlInput = document.getElementById("url");
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = "status" + (kind ? " " + kind : "");
+  }
+
+  // Restore custom bare from localStorage
+  try {
+    const saved = localStorage.getItem("uv-bare");
+    if (saved) {
+      bareInput.value = saved;
+      self.__uv$config.bare = saved;
+    } else {
+      bareInput.value = self.__uv$config.bare || "";
+    }
+  } catch (e) {
+    bareInput.value = self.__uv$config.bare || "";
+  }
+
+  function isUrl(str) {
+    return /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}([\/?#].*)?$/i.test(str.trim())
+      || str.trim().startsWith("http://")
+      || str.trim().startsWith("https://");
+  }
+
+  function buildTarget(value) {
+    let url = value.trim();
+    if (!url) return null;
+    if (!isUrl(url)) {
+      url = "https://www.google.com/search?q=" + encodeURIComponent(url);
+    } else if (!/^https?:\/\//i.test(url)) {
+      url = "https://" + url;
+    }
+    return url;
+  }
+
+  function proxyPath(target) {
+    const encoded = self.__uv$config.encodeUrl(target);
+    return self.__uv$config.prefix + encoded;
+  }
+
+  // Register SW
+  async function registerSW() {
+    if (!("serviceWorker" in navigator)) {
+      setStatus("Service workers not supported in this browser.", "err");
+      return false;
+    }
+    const proto = location.protocol;
+    if (proto !== "https:" && proto !== "http:") {
+      setStatus("Must be served over http(s). data:/blob:/file: cannot register a SW.", "err");
+      return false;
+    }
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      await navigator.serviceWorker.ready;
+      setStatus("Service worker ready. Enter a URL above.", "ok");
+      return true;
+    } catch (e) {
+      console.error(e);
+      setStatus("SW registration failed: " + (e && e.message ? e.message : e), "err");
+      return false;
+    }
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const target = buildTarget(urlInput.value);
+    if (!target) return;
+    if (!navigator.serviceWorker || !navigator.serviceWorker.controller) {
+      setStatus("Waiting for service worker control… try again in a second.", "err");
+      // still attempt navigation; SW may take over on next load
+    }
+    const path = proxyPath(target);
+    setStatus("Loading " + target + " …", "ok");
+    frame.classList.add("show");
+    frame.src = path;
+  });
+
+  document.getElementById("save-bare").addEventListener("click", async function () {
+    const v = bareInput.value.trim();
+    if (!v) {
+      setStatus("Enter a Bare URL first.", "err");
+      return;
+    }
+    try {
+      localStorage.setItem("uv-bare", v);
+    } catch (e) {}
+    self.__uv$config.bare = v;
+    // Update config used by next SW fetch by rewriting is hard; unregister + re-register
+    // Best effort: store and reload so uv.config.js path still default — inject via query
+    setStatus("Saved Bare URL. Reloading to apply…", "ok");
+    // Persist into a small override the SW can read? Old UV reads config from importScripts only.
+    // Write a dynamic config blob is not possible for SW importScripts same-origin easily.
+    // Reload page; user must also edit uv.config.js on server for permanent SW-side bare,
+    // OR we use a custom config file approach.
+    // Practical approach: also patch via session and full reload + re-register after editing config in LS for client encode only.
+    // For SW-side bare, regenerate config from LS by hosting config as dynamic — static host can't.
+    // So: tell user to edit uv.config.js OR we write config via service worker message.
+
+    // Message SW to update bare if it supports it — classic UV reads config once at import.
+    // Force update: unregister all, then reload with note to edit uv.config.js
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.unregister();
+    } catch (e) {}
+    // Client-side navigation still uses encodeUrl; SW uses baked config bare.
+    // Write a runtime override file isn't possible on static. Use location reload and document.
+    alert(
+      "Bare URL saved for this browser session UI.\n\n" +
+      "For the service worker to use it, edit uv.config.js on the server and set:\n" +
+      "  bare: \"" + v + "\"\n" +
+      "Then hard-refresh the page."
+    );
+    location.reload();
+  });
+
+  registerSW();
+})();
+  </script>
+</body>
+</html>
